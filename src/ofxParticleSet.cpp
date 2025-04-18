@@ -74,26 +74,26 @@ void ParticleSet::add(glm::vec2 position) {
   for (int i = 0; i < 10; i++) {
     particles.emplace_back(
                            position,
-                           glm::vec2{ofRandom(-5.0, 5.0), ofRandom(-5.0, 5.0)},
+                           glm::vec2{ofRandom(-15.0, 15.0), ofRandom(-15.0, 15.0)},
                            ofRandom(0, glm::two_pi<float>()/256.0),
-                           ofRandom(10.0, 200.0),
-                           ofFloatColor { ofRandom(1.0), ofRandom(1.0), ofRandom(1.0), ofRandom(0.1) },
+                           ofRandom(5.0, 150.0),
+                           ofFloatColor { ofRandom(1.0), ofRandom(1.0), ofRandom(1.0), ofRandom(0.25) },
                            ofRandom(maxParticleAge));
   }
 }
 
 void ParticleSet::drawPoints() {
-  ofBlendMode(OF_BLENDMODE_ALPHA);
   ofFill();
   for (auto& p : particles) {
     ofSetColor(p.color);
-    ofDrawCircle(p.position, 1.0);
+    ofDrawCircle(p.position, 2.0);
   }
 }
 
 void ParticleSet::drawConnections() {
-  ofBlendMode(OF_BLENDMODE_ALPHA);
-  searchResults.clear();
+  ofx::KDTree<glm::vec2>::SearchResults searchResults;
+  searchResults.resize(10);
+  
   for (int i = 0; i < particles.size(); i++) {
     Particle p = particles[i];
     spatialIndexPtr->findPointsWithinRadius(p.position, p.radius, searchResults);
@@ -106,7 +106,7 @@ void ParticleSet::drawConnections() {
       ofFloatColor c = p.color;
       c.a = p.color.a * (1.0 - distanceScale) * ((float)p.lifetime / maxParticleAge);
       ofSetColor(c);
-      ofSetLineWidth(1); //Gui::getInstance().lineWidth);
+      ofSetLineWidth(1); // ********
       ofDrawLine(p.position, otherParticle.position);
     }
   }
