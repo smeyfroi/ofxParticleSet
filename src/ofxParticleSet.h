@@ -16,7 +16,8 @@ class Particle {
 public:
   Particle(glm::vec2 position_, glm::vec2 velocity_, float spin_, float radius_, ofFloatColor color_, int lifetime_);
   bool isAlive() const { return lifetime > 0; };
-  void update(const SpatialIndexPtrT& spatialIndexPtr);
+  const glm::vec2 createForce(const glm::vec2 target, float attraction, float influence);
+  void update(const std::vector<Particle>& particles, const SpatialIndexPtrT& spatialIndexPtr);
   
   glm::vec2 position;
   glm::vec2 velocity;
@@ -39,7 +40,8 @@ public:
   void add(glm::vec2 position);
   void drawPoints();
   void drawConnections();
-
+  size_t size() const { return particles.size(); };
+  
 //protected:
 //  void threadedFunction() override;
 

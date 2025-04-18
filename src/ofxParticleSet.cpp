@@ -11,8 +11,28 @@ color { color_ },
 lifetime { lifetime_ }
 {}
 
-void Particle::update(const SpatialIndexPtrT& spatialIndexPtr) {
+const glm::vec2 Particle::createForce(const glm::vec2 target, float attraction, float influence) {
+  glm::vec2 direction = target - position;
+  float distance = direction.length();
+  float forceMagnitude = attraction * (1.0 - distance/influence);
+  return glm::step(distance, influence) * forceMagnitude * glm::normalize(direction);
+}
+
+constexpr float PARTICLE_REPULSION = -0.001;
+void Particle::update(const std::vector<Particle>& particles, const SpatialIndexPtrT& spatialIndexPtr) {
   if (!isAlive()) return;
+  
+  ofx::KDTree<glm::vec2>::SearchResults searchResults(20);
+  spatialIndexPtr->findPointsWithinRadius(position, radius, searchResults);
+  int count = 0;
+  glm::vec2 centroid;
+  for (const auto& searchResult: searchResults) {
+    const Particle& otherParticle = particles[searchResult.first];
+    if (position == otherParticle.position) continue;
+    centroid += otherParticle.position;
+    ++count;
+  }
+  if (count != 0) velocity += createForce(centroid/count, PARTICLE_REPULSION, radius);
   
   velocity = glm::rotate(velocity, spin);
   velocity *= PARTICLE_VELOCITY_DAMPING;
@@ -44,7 +64,7 @@ void ParticleSet::createSpatialIndex() {
 
 void ParticleSet::update() {
   for (auto& p : particles) {
-    p.update(spatialIndexPtr);
+    p.update(particles, spatialIndexPtr);
   }
   eraseDeadParticles();
   createSpatialIndex();
@@ -54,10 +74,10 @@ void ParticleSet::add(glm::vec2 position) {
   for (int i = 0; i < 10; i++) {
     particles.emplace_back(
                            position,
-                           glm::vec2{ofRandom(-2.0, 2.0), ofRandom(-2.0, 2.0)},
-                           ofRandom(0, glm::two_pi<float>()/128.0),
+                           glm::vec2{ofRandom(-5.0, 5.0), ofRandom(-5.0, 5.0)},
+                           ofRandom(0, glm::two_pi<float>()/256.0),
                            ofRandom(10.0, 200.0),
-                           ofFloatColor { ofRandom(1.0), ofRandom(1.0), ofRandom(1.0), ofRandom(1.0) },
+                           ofFloatColor { ofRandom(1.0), ofRandom(1.0), ofRandom(1.0), ofRandom(0.1) },
                            ofRandom(maxParticleAge));
   }
 }

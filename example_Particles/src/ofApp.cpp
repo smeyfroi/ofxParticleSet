@@ -28,7 +28,7 @@ void ofApp::update(){
 void ofApp::draw(){
   ofBlendMode(OF_BLENDMODE_NONE);
   fbo.draw(0, 0);
-  ofSetWindowTitle(ofToString(ofGetFrameRate()));
+  ofSetWindowTitle(ofToString(ofGetFrameRate()) + " / " + ofToString(particleSet.size()));
 }
 
 //--------------------------------------------------------------
