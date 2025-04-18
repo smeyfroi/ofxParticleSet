@@ -1,0 +1,5 @@
+ofxGui
+ofxRenderer
+ofxMotionFromVideo
+ofxSpatialHash
+ofxParticleSet
