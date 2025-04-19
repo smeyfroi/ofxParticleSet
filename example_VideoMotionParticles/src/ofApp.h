@@ -3,6 +3,7 @@
 #include "ofMain.h"
 #include "ofxParticleSet.h"
 #include "ofxMotionFromVideo.h"
+#include "ofxGui.h"
 
 class ofApp: public ofBaseApp{
 public:
@@ -20,9 +21,14 @@ public:
   void windowResized(int w, int h);
   void dragEvent(ofDragInfo dragInfo);
   void gotMessage(ofMessage msg);
-  
+
+private:
   ofFbo fbo;
-  ParticleSet particleSet { 60*10 };
+  ParticleSet particleSet;
   MotionFromVideo motionFromVideo;
 
+  ofxPanel gui;
+  ofParameterGroup parameters;
+  ofParameter<float> particleSpin {"particleSpin", 0.0, -0.1, 0.1};
+  ofParameter<float> velocityScale {"velocityScale", 5.0, 0.0, 50.0};
 };

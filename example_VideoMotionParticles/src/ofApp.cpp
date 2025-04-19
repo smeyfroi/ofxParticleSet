@@ -13,10 +13,14 @@ void ofApp::setup() {
   
 //  motionFromVideo.load(ofToDataPath("trimmed.mov"));
   motionFromVideo.load(ofToDataPath("violin-trimmed.mov"));
+  
+  parameters.add(particleSet.getParameterGroup());
+  parameters.add(particleSpin);
+  parameters.add(velocityScale);
+  gui.setup(parameters);
 }
 
 //--------------------------------------------------------------
-constexpr float VELOCITY_SCALE = 3.0;
 void ofApp::update(){
   motionFromVideo.update();
   
@@ -28,8 +32,9 @@ void ofApp::update(){
     auto c = pixels.getColor(x, y);
     if (c.r > 0.05 || c.r < -0.05 || c.g > 0.05 || c.g < -0.05) {
       particleSet.add({x, y},
-                      {c.r*VELOCITY_SCALE, c.g*VELOCITY_SCALE},
-                      ofFloatColor{ofRandom(1.0), ofRandom(1.0), ofRandom(1.0), ofRandom(0.2)});
+                      {c.r * velocityScale, c.g * velocityScale},
+                      ofFloatColor{ofRandom(1.0), ofRandom(1.0), ofRandom(1.0), ofRandom(0.3)},
+                      particleSpin);
     }
   }
 
@@ -38,14 +43,13 @@ void ofApp::update(){
   fbo.begin();
   {
     // fade
-    ofEnableBlendMode(OF_BLENDMODE_ALPHA);
-    ofSetColor(ofFloatColor { 0.0, 0.0, 0.0, 0.0005});
+    ofEnableBlendMode(OF_BLENDMODE_MULTIPLY);
+    ofSetColor(ofFloatColor { 0.0, 0.0, 0.0, 0.001});
     ofFill();
     ofDrawRectangle(0, 0, fbo.getWidth(), fbo.getHeight());
     // particles
     ofEnableBlendMode(OF_BLENDMODE_ADD);
-//  particleSet.drawPoints();
-    particleSet.drawConnections();
+    particleSet.draw();
   }
   fbo.end();
 }
@@ -60,6 +64,7 @@ void ofApp::draw(){
 //  ofSetColor(ofFloatColor { 1.0, 1.0, 1.0, 0.05 });
 //  motionFromVideo.getVideoFbo().draw(0, 0, ofGetWindowWidth(), ofGetWindowHeight());
 
+  gui.draw();
   ofSetWindowTitle(ofToString(ofGetFrameRate()) + " / " + ofToString(particleSet.size()));
 }
 
