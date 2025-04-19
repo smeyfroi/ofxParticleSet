@@ -37,7 +37,7 @@ public:
   void eraseDeadParticles();
   void createSpatialIndex();
   void update();
-  void add(glm::vec2 position);
+  void add(glm::vec2 position, glm::vec2 velocity, ofFloatColor color);
   void drawPoints();
   void drawConnections();
   size_t size() const { return particles.size(); };

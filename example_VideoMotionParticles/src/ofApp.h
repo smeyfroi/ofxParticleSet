@@ -23,7 +23,6 @@ public:
   
   ofFbo fbo;
   ParticleSet particleSet { 60*10 };
-  
   MotionFromVideo motionFromVideo;
 
 };

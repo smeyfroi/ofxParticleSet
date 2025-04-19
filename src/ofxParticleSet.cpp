@@ -18,7 +18,7 @@ const glm::vec2 Particle::createForce(const glm::vec2 target, float attraction, 
   return glm::step(distance, influence) * forceMagnitude * glm::normalize(direction);
 }
 
-constexpr float PARTICLE_REPULSION = -0.001;
+constexpr float PARTICLE_REPULSION = -0.02;
 void Particle::update(const std::vector<Particle>& particles, const SpatialIndexPtrT& spatialIndexPtr) {
   if (!isAlive()) return;
   
@@ -49,7 +49,9 @@ maxParticleAge { maxParticleAge_ }
 }
 
 void ParticleSet::eraseDeadParticles() {
-  auto it = std::remove_if(particles.begin(), particles.end(), [](Particle& p) { return !p.isAlive(); });
+  auto it = std::remove_if(particles.begin(), particles.end(), [](Particle& p) {
+    return (!p.isAlive() || glm::length2(p.velocity) < 0.5);
+  });
   particles.erase(it, particles.end());
 }
 
@@ -70,22 +72,22 @@ void ParticleSet::update() {
   createSpatialIndex();
 }
 
-void ParticleSet::add(glm::vec2 position) {
-  for (int i = 0; i < 10; i++) {
-    particles.emplace_back(
-                           position,
-                           glm::vec2{ofRandom(-15.0, 15.0), ofRandom(-15.0, 15.0)},
-                           ofRandom(0, glm::two_pi<float>()/256.0),
-                           ofRandom(5.0, 150.0),
-                           ofFloatColor { ofRandom(1.0), ofRandom(1.0), ofRandom(1.0), ofRandom(0.25) },
-                           ofRandom(maxParticleAge));
-  }
+void ParticleSet::add(glm::vec2 position, glm::vec2 velocity, ofFloatColor color) {
+  particles.emplace_back(
+                         position,
+                         velocity,
+                         ofRandom(0, glm::two_pi<float>()/256.0),
+                         ofRandom(30.0, 200.0),
+                         color,
+                         ofRandom(maxParticleAge));
 }
 
 void ParticleSet::drawPoints() {
   ofFill();
   for (auto& p : particles) {
-    ofSetColor(p.color);
+    ofFloatColor c = p.color;
+    c.a = p.color.a * std::sqrt((float)p.lifetime / maxParticleAge);// * (glm::length2(p.velocity) / 5.0);
+    ofSetColor(c);
     ofDrawCircle(p.position, 2.0);
   }
 }
