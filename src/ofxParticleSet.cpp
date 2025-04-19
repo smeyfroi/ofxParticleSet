@@ -51,9 +51,9 @@ void Particle::update(const std::vector<Particle>& particles,
 
 void ParticleSet::eraseDeadParticles() {
   size_t s = particles.size();
-  auto it = std::remove_if(particles.begin(), particles.end(), [](Particle& p) {
-    return (!p.isAlive());
-  });
+  auto it = std::remove_if(particles.begin(),
+                           particles.end(),
+                           [](Particle& p) { return (!p.isAlive()); });
   size_t excessParticles = std::max(0L, (it - particles.begin()) - maxParticles);
   particles.erase(it, particles.end()); // the ones that are no longer alive
   particles.erase(particles.begin(), particles.begin() + excessParticles); // the earliest excess ones
@@ -65,7 +65,8 @@ void ParticleSet::createSpatialIndex() {
   positions.reserve(particles.size());
   std::transform(particles.begin(),
                  particles.end(),
-                 std::back_inserter(positions), [](const Particle& p) { return p.position; });
+                 std::back_inserter(positions),
+                 [](const Particle& p) { return p.position; });
   spatialIndexPtr = make_shared<ofx::KDTree<glm::vec2>>(positions);
 }
 
