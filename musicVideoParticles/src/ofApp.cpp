@@ -14,8 +14,8 @@ void ofApp::setup(){
   ofClear(ofFloatColor {0.0, 0.0, 0.0, 0.0});
   fbo.end();
 
-  motionFromVideo.load(ofToDataPath("trombone-trimmed.mov"), false);
-//  motionFromVideo.load(ofToDataPath("violin-trimmed.mov"), false);
+//  motionFromVideo.load(ofToDataPath("trombone-trimmed.mov"), false);
+  motionFromVideo.load(ofToDataPath("violin-trimmed.mov"), false);
   
   parameters.add(particleSet.getParameterGroup());
   parameters.add(particleSpin);
@@ -38,9 +38,13 @@ void ofApp::addParticles() {
     float y = ofRandom(pixels.getHeight());
     auto c = pixels.getColor(x, y);
     if (c.r > 0.05 || c.r < -0.05 || c.g > 0.05 || c.g < -0.05) {
+      int colorIndex = ofRandom(0, 4);
+      if (c.r < 0.0 || c.g < 0.0) { colorIndex = 7 - colorIndex; }
+      ofFloatColor color = ofFloatColor(somPalette.getColor(colorIndex));
+      color.a = 0.3;
       particleSet.add({x, y},
                       {c.r * velocityScale, c.g * velocityScale},
-                      ofFloatColor{ofRandom(1.0), ofRandom(1.0), ofRandom(1.0), ofRandom(0.3)},
+                      color,
                       particleSpin);
     }
   }
@@ -50,11 +54,14 @@ void ofApp::update(){
   motionFromVideo.update();
 
   audioDataProcessorPtr->update();
-  float s = audioDataProcessorPtr->getNormalisedScalarValue(ofxAudioAnalysisClient::AnalysisScalar::pitch);
+//  float s = audioDataProcessorPtr->getNormalisedScalarValue(ofxAudioAnalysisClient::AnalysisScalar::pitch);
   float t = audioDataProcessorPtr->getNormalisedScalarValue(ofxAudioAnalysisClient::AnalysisScalar::rootMeanSquare);
-  float u = audioDataProcessorPtr->getNormalisedScalarValueMA(ofxAudioAnalysisClient::AnalysisScalar::complexSpectralDifference);
-  float v = audioDataProcessorPtr->getNormalisedScalarValueMA(ofxAudioAnalysisClient::AnalysisScalar::spectralCrest);
-  float w = audioDataProcessorPtr->getNormalisedScalarValueMA(ofxAudioAnalysisClient::AnalysisScalar::zeroCrossingRate);
+  float u = audioDataProcessorPtr->getNormalisedScalarValue(ofxAudioAnalysisClient::AnalysisScalar::complexSpectralDifference, 0.0, 80.0);
+  float v = audioDataProcessorPtr->getNormalisedScalarValue(ofxAudioAnalysisClient::AnalysisScalar::spectralCrest, 0.0, 140.0);
+  float w = audioDataProcessorPtr->getNormalisedScalarValue(ofxAudioAnalysisClient::AnalysisScalar::zeroCrossingRate, 0.0, 20.0);
+//  float u = audioDataProcessorPtr->getNormalisedScalarValueMA(ofxAudioAnalysisClient::AnalysisScalar::complexSpectralDifference);
+//  float v = audioDataProcessorPtr->getNormalisedScalarValueMA(ofxAudioAnalysisClient::AnalysisScalar::spectralCrest);
+//  float w = audioDataProcessorPtr->getNormalisedScalarValueMA(ofxAudioAnalysisClient::AnalysisScalar::zeroCrossingRate);
 
   std::vector<ofxAudioData::ValiditySpec> sampleValiditySpecs {
     {ofxAudioAnalysisClient::AnalysisScalar::rootMeanSquare, false, 0.01},
@@ -102,6 +109,8 @@ void ofApp::draw(){
   ofEnableBlendMode(OF_BLENDMODE_ALPHA);
   ofSetColor(ofFloatColor { 1.0, 1.0, 1.0, 0.05 });
   motionFromVideo.getVideoFbo().draw(0, 0, ofGetWindowWidth(), ofGetWindowHeight());
+  
+  somPalette.draw();
 
   gui.draw();
 //  ofSetWindowTitle(ofToString(ofGetFrameRate()) + " / " + ofToString(particleSet.size()));
@@ -115,6 +124,7 @@ void ofApp::exit(){
 //--------------------------------------------------------------
 void ofApp::keyPressed(int key){
   if (audioAnalysisClientPtr->keyPressed(key)) return;
+  if (somPalette.keyPressed(key)) return;
 }
 
 //--------------------------------------------------------------
