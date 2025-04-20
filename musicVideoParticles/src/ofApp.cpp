@@ -14,8 +14,8 @@ void ofApp::setup(){
   ofClear(ofFloatColor {0.0, 0.0, 0.0, 0.0});
   fbo.end();
 
-//  motionFromVideo.load(ofToDataPath("trombone-trimmed.mov"), false);
-  motionFromVideo.load(ofToDataPath("violin-trimmed.mov"), false);
+  motionFromVideo.load(ofToDataPath("trombone-trimmed.mov"), false);
+//  motionFromVideo.load(ofToDataPath("violin-trimmed.mov"), false);
   
   parameters.add(particleSet.getParameterGroup());
   parameters.add(particleSpin);
@@ -71,9 +71,8 @@ void ofApp::update(){
     somPalette.addInstanceData(instance);
     somPalette.update();
     
-//    if (audioDataProcessorPtr->getNormalisedScalarValueMA(ofxAudioAnalysisClient::AnalysisScalar::rootMeanSquare) > 0.0) {
-    if (t > 0.4) {
-      ofLogNotice() << t;
+    float tMA = audioDataProcessorPtr->getNormalisedScalarValueMA(ofxAudioAnalysisClient::AnalysisScalar::rootMeanSquare);
+    if (t > tMA) {
       addParticles();
     }
   }
