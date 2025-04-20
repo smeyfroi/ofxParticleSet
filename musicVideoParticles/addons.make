@@ -1,0 +1,15 @@
+ofxNetwork
+ofxOsc
+ofxHistoryPlot
+ofxGist
+ofxAudioFile
+ofxGui
+ofxSoundObjects
+ofxAudioAnalysisClient
+ofxAudioData
+ofxRenderer
+ofxMotionFromVideo
+ofxSpatialHash
+ofxParticleSet
+ofxSelfOrganizingMap
+ofxSomPalette
