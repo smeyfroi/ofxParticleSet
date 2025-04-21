@@ -14,10 +14,13 @@ void ofApp::setup(){
   ofClear(ofFloatColor {0.0, 0.0, 0.0, 0.0});
   fbo.end();
 
-//  motionFromVideo.load(ofToDataPath("trombone-trimmed.mov"), false);
-  motionFromVideo.load(ofToDataPath("violin-trimmed.mov"), false);
+  motionFromVideo.load(ofToDataPath("trombone-trimmed.mov"), false);
+//  motionFromVideo.load(ofToDataPath("violin-trimmed.mov"), false);
   
-  parameters.add(particleSet.getParameterGroup());
+  auto& particleSetParameters = particleSet.getParameterGroup();
+  particleSetParameters.getFloat("particleDrawRadius").set(1.0);
+  particleSetParameters.getFloat("particleConnectionRadius").set(60.0);
+  parameters.add(particleSetParameters);
   parameters.add(particleSpin);
   parameters.add(velocityScale);
   parameters.add(potentialNewParticles);
@@ -25,11 +28,6 @@ void ofApp::setup(){
 }
 
 //--------------------------------------------------------------
-ofColor ofApp::colorAt(float x, float y) {
-  float somScale = SOM_WIDTH / motionFromVideo.getMotionFbo().getWidth();
-  return somPalette.getColorAt(x, y);
-}
-
 void ofApp::addParticles() {
   ofFloatPixels pixels;
   motionFromVideo.getMotionFbo().readToPixels(pixels);

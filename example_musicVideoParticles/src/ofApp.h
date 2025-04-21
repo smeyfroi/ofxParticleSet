@@ -6,11 +6,9 @@
 #include "ofxGui.h"
 #include "ofxAudioAnalysisClient.h"
 #include "ofxAudioData.h"
-#include "ofxSomPalette.h"
+#include "ofxContinuousSomPalette.hpp"
 
-constexpr int SOM_WIDTH = 256;
-
-class ofApp : public ofBaseApp{
+class ofApp : public ofBaseApp {
   
 public:
   void setup() override;
@@ -37,14 +35,13 @@ private:
   MotionFromVideo motionFromVideo;
   std::shared_ptr<ofxAudioAnalysisClient::LocalGistClient> audioAnalysisClientPtr;
   std::shared_ptr<ofxAudioData::Processor> audioDataProcessorPtr;
-  SomPalette somPalette { SOM_WIDTH, SOM_WIDTH, 0.015, 10000 };
+  ContinuousSomPalette somPalette { 16, 16, 0.015, 1000 };
 
   ofxPanel gui;
   ofParameterGroup parameters;
-  ofParameter<float> particleSpin {"particleSpin", 0.0, -0.1, 0.1};
+  ofParameter<float> particleSpin {"particleSpin", 0.01, -0.1, 0.1};
   ofParameter<float> velocityScale {"velocityScale", 5.0, 0.0, 50.0};
   ofParameter<int> potentialNewParticles {"potentialNewParticles", 100.0, 0.0, 1000.0};
 
-  ofColor colorAt(float x, float y);
   void addParticles();
 };

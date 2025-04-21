@@ -11,8 +11,8 @@ void ofApp::setup() {
   ofClear(ofFloatColor {0.0, 0.0, 0.0, 0.0});
   fbo.end();
   
-//  motionFromVideo.load(ofToDataPath("trimmed.mov"));
-  motionFromVideo.load(ofToDataPath("violin-trimmed.mov"));
+  motionFromVideo.load(ofToDataPath("trimmed.mov"), false); // don't mute
+//  motionFromVideo.load(ofToDataPath("violin-trimmed.mov"));
   
   parameters.add(particleSet.getParameterGroup());
   parameters.add(particleSpin);
