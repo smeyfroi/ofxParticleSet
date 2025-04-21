@@ -51,10 +51,10 @@ public:
   ofParameter<int> maxParticles {"maxParticles", 300, 100, 2000 };
   ofParameter<int> maxParticleAge {"maxParticleAge", 500, 10, 1000 };
   ofParameter<float> particleVelocityDamping {"particleVelocityDamping", 0.995, 0.9, 1.0 };
-  ofParameter<float> particleAttraction {"particleAttraction", 0.0, -0.2, 0.2 };
+  ofParameter<float> particleAttraction {"particleAttraction", -0.01, -0.2, 0.2 };
   ofParameter<float> particleAttractionRadius {"particleAttractionRadius", 150.0, 0.0, 1000.0 };
-  ofParameter<float> particleConnectionRadius {"particleConnectionRadius", 0.0, 0.0, 1000.0 };
-  ofParameter<float> particleDrawRadius {"particleDrawRadius", 1.7, 1.0, 20.0 };
+  ofParameter<float> particleConnectionRadius {"particleConnectionRadius", 20.0, 0.0, 1000.0 };
+  ofParameter<float> particleDrawRadius {"particleDrawRadius", 0.5, 0.5, 20.0 };
 
   ofParameterGroup& getParameterGroup();
 
