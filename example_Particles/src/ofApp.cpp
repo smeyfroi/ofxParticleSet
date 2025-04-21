@@ -3,6 +3,7 @@
 //--------------------------------------------------------------
 void ofApp::setup() {
   ofEnableAlphaBlending();
+  ofSetFrameRate(60);
 
   fbo.allocate(ofGetWindowWidth(), ofGetWindowHeight(), GL_RGB32F);
   fbo.begin();
