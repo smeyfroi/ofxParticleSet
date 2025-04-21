@@ -20,7 +20,7 @@ void ofApp::update(){
   ofSetColor(ofFloatColor { 0.0, 0.0, 0.0, 0.005});
   ofFill();
   ofDrawRectangle(0, 0, fbo.getWidth(), fbo.getHeight());
-  particleSet.drawConnections();
+  particleSet.draw();
   fbo.end();
 }
 
@@ -51,8 +51,10 @@ void ofApp::mouseMoved(int x, int y){
 }
 
 //--------------------------------------------------------------
-void ofApp::mouseDragged(int x, int y, int button){
-  particleSet.add({x, y});
+void ofApp::mouseDragged(int x, int y, int button) {
+  for (int i = 0; i < 10; i++) {
+    particleSet.add({x, y}, {ofRandom(5.0)-2.5, ofRandom(5.0)-2.5}, ofFloatColor{ofRandom(1.0),ofRandom(1.0),ofRandom(1.0),ofRandom(1.0)}, ofRandom(0.1)-0.05);
+  }
 }
 
 //--------------------------------------------------------------

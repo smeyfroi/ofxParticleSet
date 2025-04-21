@@ -32,7 +32,7 @@ public:
   int lifetime;
 };
 
-// TODO: set a max number of particles and delete oldest when at limit
+
 
 class ParticleSet {
 //class ParticleSet: public ofThread {

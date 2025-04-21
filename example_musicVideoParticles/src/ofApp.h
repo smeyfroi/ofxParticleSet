@@ -35,7 +35,7 @@ private:
   MotionFromVideo motionFromVideo;
   std::shared_ptr<ofxAudioAnalysisClient::LocalGistClient> audioAnalysisClientPtr;
   std::shared_ptr<ofxAudioData::Processor> audioDataProcessorPtr;
-  ContinuousSomPalette somPalette { 16, 16, 0.015, 1000 };
+  ContinuousSomPalette somPalette { 16, 16, 0.05, 1000 };
 
   ofxPanel gui;
   ofParameterGroup parameters;
