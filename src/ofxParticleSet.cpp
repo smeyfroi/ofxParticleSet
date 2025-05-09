@@ -10,7 +10,7 @@ lifetime { lifetime_ }
 {}
 
 bool Particle::isAlive() const {
-  return lifetime > 0 && glm::length2(velocity) > 1.0;
+  return lifetime > 0 && glm::length2(velocity) > (0.0005 * 0.0005);
 }
 
 const glm::vec2 Particle::createForce(const glm::vec2 target, float attraction, float attractionRadius) const {
@@ -51,14 +51,16 @@ void Particle::update(const std::vector<Particle>& particles,
 
 
 
-ParticleSet::ParticleSet() {
+ParticleSet::ParticleSet(float drawScale_)
+: drawScale { drawScale_ }
+{
+  createSpatialIndex();
   setThreadName("ParticleSet " + ofToString(this));
   startThread();
 }
 
 ParticleSet::~ParticleSet() {
   updates.close();
-//  newPalettePixels.close();
   waitForThread(true);
 }
 
@@ -100,16 +102,24 @@ void ParticleSet::threadedFunction() {
     do {
       std::for_each(update.newParticleData.begin(),
                     update.newParticleData.end(),
-                    [&] (auto& d) { particles.emplace_back(d.position,
-                                                           d.velocity,
-                                                           d.spin,
-                                                           particleDrawRadius,
-                                                           d.color,
-                                                           ofRandom(maxParticleAge)); });
+                    [&] (auto& d) {
+        particles.emplace_back(d.position,
+                               d.velocity,
+                               d.spin,
+                               particleDrawRadius,
+                               d.color,
+                               ofRandom(maxParticleAge));
+      });
     } while(updates.tryReceive(update));
     std::for_each(particles.begin(),
                   particles.end(),
-                  [&] (auto& p) { p.update(particles, spatialIndexPtr, particleVelocityDamping, particleAttraction, particleAttractionRadius); });
+                  [&] (auto& p) {
+      p.update(particles,
+               spatialIndexPtr,
+               particleVelocityDamping,
+               particleAttraction,
+               particleAttractionRadius * drawScale);
+    });
     eraseDeadParticles();
     createSpatialIndex();
     unlock();
@@ -117,6 +127,7 @@ void ParticleSet::threadedFunction() {
 }
 
 void ParticleSet::draw() {
+  float particleConnectionRadius2 = particleConnectionRadius * particleConnectionRadius * drawScale * drawScale;
   ofx::KDTree<glm::vec2>::SearchResults searchResults;
   searchResults.resize(10);
   
@@ -126,22 +137,22 @@ void ParticleSet::draw() {
     for (int i = 0; i < particles.size(); i++) {
       Particle p = particles[i];
       ofFloatColor c = p.color;
-      spatialIndexPtr->findPointsWithinRadius(p.position, particleConnectionRadius, searchResults);
+      spatialIndexPtr->findPointsWithinRadius(p.position, particleConnectionRadius * drawScale, searchResults);
       for (const auto& searchResult: searchResults) {
         if (searchResult.first <= i) continue; // don't double-count particles
         const Particle& otherParticle = particles[searchResult.first];
         if (p.position == otherParticle.position) continue;
         float distanceSquared = searchResult.second;
-        float distanceScale = distanceSquared/(particleConnectionRadius*particleConnectionRadius); // 0 close, 1 far
+        float distanceScale = distanceSquared / particleConnectionRadius2; // 0 close, 1 far
         c.a = p.color.a * (1.0 - distanceScale) * ((float)p.lifetime / maxParticleAge);
         ofSetColor(c);
-        ofSetLineWidth(1.0); //particleDrawRadius);
+        ofSetLineWidth(p.drawRadius * drawScale);
         ofDrawLine(p.position, otherParticle.position);
       }
       if (searchResults.size() <= 1) {
         //      c.a *= std::sqrt((float)p.lifetime / maxParticleAge);// * (glm::length2(p.velocity) / 5.0);
         ofSetColor(c);
-        ofDrawCircle(p.position, particleDrawRadius);
+        ofDrawCircle(p.position, p.drawRadius / 2.0 * drawScale);
       }
     }
   }

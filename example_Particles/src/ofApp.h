@@ -21,5 +21,5 @@ public:
   void gotMessage(ofMessage msg);
   
   ofFbo fbo;
-  ParticleSet particleSet;
+  ParticleSet particleSet { 768 };
 };
