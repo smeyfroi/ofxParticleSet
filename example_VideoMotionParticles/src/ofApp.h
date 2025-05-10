@@ -24,7 +24,7 @@ public:
 
 private:
   ofFbo fbo;
-  ParticleSet particleSet;
+  ParticleSet particleSet { 1920 };
   MotionFromVideo motionFromVideo;
 
   ofxPanel gui;

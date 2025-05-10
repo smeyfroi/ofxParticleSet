@@ -15,6 +15,7 @@ void ofApp::setup() {
 //  motionFromVideo.load(ofToDataPath("violin-trimmed.mov"));
   
   parameters.add(particleSet.getParameterGroup());
+  parameters.add(motionFromVideo.getParameterGroup());
   parameters.add(particleSpin);
   parameters.add(velocityScale);
   gui.setup(parameters);
@@ -24,16 +25,11 @@ void ofApp::setup() {
 void ofApp::update(){
   motionFromVideo.update();
   
-  ofFloatPixels pixels;
-  motionFromVideo.getMotionFbo().readToPixels(pixels);
   for (int i = 0; i < 100; i++) {
-    float x = ofRandom(pixels.getWidth());
-    float y = ofRandom(pixels.getHeight());
-    auto c = pixels.getColor(x, y);
-    if (c.r > 0.05 || c.r < -0.05 || c.g > 0.05 || c.g < -0.05) {
-      particleSet.add({x, y},
-                      {c.r * velocityScale, c.g * velocityScale},
-                      ofFloatColor{ofRandom(1.0), ofRandom(1.0), ofRandom(1.0), ofRandom(0.3)},
+    if (auto vec = motionFromVideo.trySampleMotion()) {
+      particleSet.add({vec->x, vec->y},
+                      {vec->z * velocityScale, vec->w * velocityScale},
+                      ofFloatColor{ofRandom(1.0), ofRandom(1.0), ofRandom(1.0), ofRandom(0.2)},
                       particleSpin);
     }
   }
