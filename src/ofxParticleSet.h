@@ -22,7 +22,8 @@ public:
               const SpatialIndexPtrT& spatialIndexPtr,
               float particleVelocityDamping,
               float particleAttraction,
-              float attractionRadius);
+              float attractionRadius,
+              float distanceScale);
   
   glm::vec2 position;
   glm::vec2 velocity;
@@ -48,7 +49,7 @@ struct ParticleSetUpdate {
 class ParticleSet: public ofThread {
 
 public:
-  ParticleSet(float drawScale_);
+  ParticleSet(float drawScale_ = 1.0); // 1.0 assumes normalised coords
   ~ParticleSet();
   void update();
   void add(glm::vec2 position, glm::vec2 velocity, ofFloatColor color, float spin);
@@ -57,13 +58,14 @@ public:
   
   std::string getParameterGroupName() const { return "Particle Set"; }
   ofParameterGroup parameters;
-  ofParameter<int> maxParticles { "maxParticles", 300, 100, 2000 };
+  ofParameter<int> maxParticles { "maxParticles", 250, 100, 2000 };
   ofParameter<int> maxParticleAge { "maxParticleAge", 500, 10, 1000 };
   ofParameter<float> particleVelocityDamping { "particleVelocityDamping", 0.995, 0.9, 1.0 };
-  ofParameter<float> particleAttraction { "particleAttraction", -0.01, -0.2, 0.2 };
-  ofParameter<float> particleAttractionRadius { "particleAttractionRadius", 0.1, 0.0, 1.0 }; // 150.0, 0.0, 1000.0 };
-  ofParameter<float> particleConnectionRadius { "particleConnectionRadius", 0.05, 0.0, 1.0 }; // 20.0, 0.0, 1000.0 };
-  ofParameter<float> particleDrawRadius { "particleDrawRadius", 0.001, 0.0, 0.05 }; // 0.5, 0.5, 20.0 };
+  ofParameter<float> particleAttraction { "particleAttraction", -0.02, -0.2, 0.2 };
+  ofParameter<float> particleAttractionRadius { "particleAttractionRadius", 0.1, 0.0, 1.0 }; // normalised
+  ofParameter<float> particleConnectionRadius { "particleConnectionRadius", 0.05, 0.0, 1.0 }; // normalised
+  ofParameter<float> particleDrawRadius { "particleDrawRadius", 0.0002, 0.0, 0.05 }; //normalised
+  ofParameter<float> forceScale { "forceScale", 1.0, 0.0, 1.0 }; // about 1.0/drawWidth
 
   ofParameterGroup& getParameterGroup();
 

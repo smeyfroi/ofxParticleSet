@@ -10,7 +10,7 @@ lifetime { lifetime_ }
 {}
 
 bool Particle::isAlive() const {
-  return lifetime > 0 && glm::length2(velocity) > (0.0005 * 0.0005);
+  return lifetime > 0; // && glm::length2(velocity) > 1.0/4000.0;
 }
 
 const glm::vec2 Particle::createForce(const glm::vec2 target, float attraction, float attractionRadius) const {
@@ -24,7 +24,8 @@ void Particle::update(const std::vector<Particle>& particles,
                       const SpatialIndexPtrT& spatialIndexPtr,
                       float particleVelocityDamping,
                       float particleAttraction,
-                      float attractionRadius) {
+                      float attractionRadius,
+                      float forceScale) {
   if (!isAlive()) return;
   
   if (particleAttraction != 0.0) {
@@ -39,7 +40,7 @@ void Particle::update(const std::vector<Particle>& particles,
     }
     if (count > 1) {
       centroid /= count;
-      velocity += createForce(centroid, particleAttraction, attractionRadius);
+      velocity += createForce(centroid, particleAttraction, attractionRadius) * forceScale;
     }
   }
   
@@ -118,7 +119,8 @@ void ParticleSet::threadedFunction() {
                spatialIndexPtr,
                particleVelocityDamping,
                particleAttraction,
-               particleAttractionRadius * drawScale);
+               particleAttractionRadius * drawScale,
+               forceScale);
     });
     eraseDeadParticles();
     createSpatialIndex();
@@ -146,13 +148,13 @@ void ParticleSet::draw() {
         float distanceScale = distanceSquared / particleConnectionRadius2; // 0 close, 1 far
         c.a = p.color.a * (1.0 - distanceScale) * ((float)p.lifetime / maxParticleAge);
         ofSetColor(c);
-        ofSetLineWidth(p.drawRadius * drawScale);
+        ofSetLineWidth(2 * p.drawRadius * drawScale);
         ofDrawLine(p.position, otherParticle.position);
       }
       if (searchResults.size() <= 1) {
         //      c.a *= std::sqrt((float)p.lifetime / maxParticleAge);// * (glm::length2(p.velocity) / 5.0);
         ofSetColor(c);
-        ofDrawCircle(p.position, p.drawRadius / 2.0 * drawScale);
+        ofDrawCircle(p.position, p.drawRadius * drawScale);
       }
     }
   }
@@ -169,6 +171,7 @@ ofParameterGroup& ParticleSet::getParameterGroup() {
     parameters.add(particleAttractionRadius);
     parameters.add(particleConnectionRadius);
     parameters.add(particleDrawRadius);
+    parameters.add(forceScale); // a read-only parameter
   }
   return parameters;
 }
