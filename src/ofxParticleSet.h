@@ -64,8 +64,8 @@ public:
   ofParameter<float> particleAttraction { "particleAttraction", -0.02, -0.2, 0.2 };
   ofParameter<float> particleAttractionRadius { "particleAttractionRadius", 0.1, 0.0, 1.0 }; // normalised
   ofParameter<float> particleConnectionRadius { "particleConnectionRadius", 0.05, 0.0, 1.0 }; // normalised
-  ofParameter<float> particleDrawRadius { "particleDrawRadius", 0.0002, 0.0, 0.05 }; //normalised
-  ofParameter<float> forceScale { "forceScale", 1.0, 0.0, 1.0 }; // about 1.0/drawWidth
+  ofParameter<float> particleDrawRadius { "particleDrawRadius", 0.0002, 0.0, 0.05 }; // normalised
+  ofParameter<float> forceScale { "forceScale", 0.05, 0.0, 0.1 }; // normalised
 
   ofParameterGroup& getParameterGroup();
 

@@ -46,7 +46,7 @@ void Particle::update(const std::vector<Particle>& particles,
   
   velocity = glm::rotate(velocity, spin);
   velocity *= particleVelocityDamping;
-  position += velocity;
+  position += velocity * ofGetLastFrameTime();
   lifetime--;
 }
 
@@ -120,7 +120,7 @@ void ParticleSet::threadedFunction() {
                particleVelocityDamping,
                particleAttraction,
                particleAttractionRadius * drawScale,
-               forceScale);
+               forceScale * drawScale);
     });
     eraseDeadParticles();
     createSpatialIndex();
@@ -171,7 +171,7 @@ ofParameterGroup& ParticleSet::getParameterGroup() {
     parameters.add(particleAttractionRadius);
     parameters.add(particleConnectionRadius);
     parameters.add(particleDrawRadius);
-    parameters.add(forceScale); // a read-only parameter
+    parameters.add(forceScale);
   }
   return parameters;
 }
