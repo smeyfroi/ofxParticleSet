@@ -186,7 +186,9 @@ void ParticleSet::updateMeshes() {
 void ParticleSet::draw() {
   ofSetColor(255);
   lock();
+  glPointSize(particleDrawRadius);
   pointMesh.draw(); // TODO: in a vert shader, can set gl_PointSize to p.drawRadius * drawScale
+  glPointSize(1.0);
   lineMesh.draw();
   unlock();
 }
