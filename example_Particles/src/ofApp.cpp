@@ -7,7 +7,7 @@ void ofApp::setup() {
 
   fbo.allocate(ofGetWindowWidth(), ofGetWindowHeight(), GL_RGB32F);
   fbo.begin();
-  ofSetColor(ofFloatColor { 0.0, 0.0, 0.0, 1.0});
+  ofSetColor(ofFloatColor { 0.3, 0.3, 0.3, 1.0});
   ofFill();
   ofDrawRectangle(0, 0, fbo.getWidth(), fbo.getHeight());
   fbo.end();
@@ -18,7 +18,7 @@ void ofApp::update(){
   particleSet.update();
   fbo.begin();
   ofBlendMode(OF_BLENDMODE_ALPHA);
-  ofSetColor(ofFloatColor { 0.0, 0.0, 0.0, 0.005});
+  ofSetColor(ofFloatColor { 0.3, 0.3, 0.3, 0.005});
   ofFill();
   ofDrawRectangle(0, 0, fbo.getWidth(), fbo.getHeight());
   particleSet.draw();
@@ -54,7 +54,7 @@ void ofApp::mouseMoved(int x, int y){
 //--------------------------------------------------------------
 void ofApp::mouseDragged(int x, int y, int button) {
   for (int i = 0; i < 10; i++) {
-    particleSet.add({x, y}, {ofRandom(5.0)-2.5, ofRandom(5.0)-2.5}, ofFloatColor{ofRandom(1.0),ofRandom(1.0),ofRandom(1.0),ofRandom(1.0)}, ofRandom(0.1)-0.05);
+    particleSet.add({x, y, 0.0}, {ofRandom(5.0)-2.5, ofRandom(5.0)-2.5, 0.0}, ofFloatColor{ofRandom(1.0),ofRandom(1.0),ofRandom(1.0),ofRandom(1.0)}, ofRandom(0.1)-0.05);
   }
 }
 

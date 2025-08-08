@@ -1,6 +1,9 @@
 #include "ofApp.h"
 
 int main(){
-	ofSetupOpenGL(768, 768, OF_WINDOW);
-	ofRunApp(new ofApp());
+  ofGLFWWindowSettings settings;
+  settings.setSize(768, 768);
+  settings.setGLVersion(4, 1);
+  auto mainWindow = ofCreateWindow(settings);
+  ofRunApp(new ofApp());
 }

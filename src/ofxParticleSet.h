@@ -7,37 +7,12 @@
 #include <memory>
 #include <vector>
 
-using SpatialIndexT = ofx::KDTree<glm::vec2>;
+using SpatialIndexT = ofx::KDTree<glm::vec3>;
 using SpatialIndexPtrT = shared_ptr<SpatialIndexT>;
 
-
-
-class Particle {
-  
-public:
-  Particle(glm::vec2 position_, glm::vec2 velocity_, float spin_, float drawRadius_, ofFloatColor color_, int lifetime_);
-  bool isAlive() const;
-  const glm::vec2 createForce(const glm::vec2 target, float attraction, float attractionRadius) const;
-  void update(const std::vector<Particle>& particles,
-              const SpatialIndexPtrT& spatialIndexPtr,
-              float particleVelocityDamping,
-              float particleAttraction,
-              float attractionRadius,
-              float distanceScale);
-  
-  glm::vec2 position;
-  glm::vec2 velocity;
-  float spin;
-  float drawRadius;
-  ofFloatColor color;
-  int lifetime;
-};
-
-
-
 struct NewParticleDatum {
-  glm::vec2 position;
-  glm::vec2 velocity;
+  glm::vec3 position;
+  glm::vec3 velocity;
   ofFloatColor color;
   float spin;
 };
@@ -49,11 +24,21 @@ struct ParticleSetUpdate {
 class ParticleSet: public ofThread {
 
 public:
+  struct Particle {
+    glm::vec3 position;
+    glm::vec3 velocity;
+    ofFloatColor color;
+    float spin;
+    float startLife;
+    float life;
+  };
+
   ParticleSet(float drawScale_ = 1.0); // 1.0 assumes normalised coords
   ~ParticleSet();
   void update();
-  void add(glm::vec2 position, glm::vec2 velocity, ofFloatColor color, float spin);
+  void add(glm::vec3 position, glm::vec3 velocity, ofFloatColor color, float spin);
   void draw();
+  void allocateParticles();
   size_t size() const { return particles.size(); };
   
   const int STRATEGY_POINTS = 0;
@@ -63,7 +48,7 @@ public:
   std::string getParameterGroupName() const { return "Particle Set"; }
   ofParameterGroup parameters;
   ofParameter<int> strategy { "strategy", 1, 0, 2 };
-  ofParameter<int> maxParticles { "maxParticles", 250, 100, 5000 };
+  ofParameter<int> maxParticles { "maxParticles", 10000, 100, 20000 }; // TODO: event listener to reallocate everything
   ofParameter<int> maxParticleAge { "maxParticleAge", 500, 10, 1000 };
   ofParameter<float> particleVelocityDamping { "particleVelocityDamping", 0.995, 0.9, 1.0 };
   ofParameter<float> particleAttraction { "particleAttraction", -0.02, -0.2, 0.2 };
@@ -80,15 +65,20 @@ protected:
 
 private:
   float drawScale;
-  ofMesh pointMesh, lineMesh;
-  
+  int activeCount;
   std::vector<Particle> particles;
-  std::vector<glm::vec2> positions; // particle positions used to create the spatial index. There must be a direct way but I can't make the templates work
+  ofVbo particleVbo;
+  ofShader shader;
+  void loadShader();
+  std::string getVertexShader();
+  std::string getFragmentShader();
+
+  std::vector<glm::vec3> positions; // particle positions used to create the spatial index. There must be a direct way but I can't make the templates work. This happens in parallel in any case.
   SpatialIndexPtrT spatialIndexPtr;
 
   void eraseDeadParticles();
   void createSpatialIndex();
-  void updateMeshes();
+  void updateVbo();
 
   ofThreadChannel<ParticleSetUpdate> updates;
 };
