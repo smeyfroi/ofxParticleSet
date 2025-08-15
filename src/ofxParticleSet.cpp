@@ -70,7 +70,6 @@ ParticleSet::~ParticleSet() {
 }
 
 void ParticleSet::eraseDeadParticles() {
-  size_t s = particles.size();
   auto it = std::remove_if(particles.begin(),
                            particles.end(),
                            [](Particle& p) { return (!p.isAlive()); });
