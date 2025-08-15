@@ -104,6 +104,7 @@ void ParticleSet::add(glm::vec2 position, glm::vec2 velocity, ofFloatColor color
 void ParticleSet::threadedFunction() {
   ParticleSetUpdate update;
   while (updates.receive(update)) {
+//    auto startTime = ofGetElapsedTimeMillis();
     do {
       std::for_each(update.newParticleData.begin(),
                     update.newParticleData.end(),
@@ -131,6 +132,7 @@ void ParticleSet::threadedFunction() {
     eraseDeadParticles();
     createSpatialIndex();
     updateMeshes();
+//    ofLogNotice() << "ParticleSet thread finished " << ofGetElapsedTimeMillis() - startTime << " ms";
   }
 }
 
