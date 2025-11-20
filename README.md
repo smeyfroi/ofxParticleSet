@@ -15,8 +15,22 @@ ofxParticleSet is distributed under the [MIT License](https://en.wikipedia.org/w
 
 Dependencies
 ------------
-- [ofxSpatialHash](https://github.com/bakercp/ofxSpatialHash)
+- Core openFrameworks (no external addons required)
 
 Compatibility
 ------------
-Developed against OpenFrameworks v0.12+.
+Developed against OpenFrameworks v0.12+ (GL 4.1 core context on macOS).
+
+GPU Implementation
+------------------
+- Particle integration, lifetime decay and neighbor attraction now run entirely inside transform feedback vertex shaders.
+- Spatial relationships are handled via a Morton-coded sort uploaded each frame; geometry shaders read the sorted buffers to draw connection lines.
+- Per-particle data (position, velocity, spin, color, radius, lifetime) is stored in ping-pong VBOs and mirrored on the CPU for spawning and recycling.
+- Example projects must request at least an OpenGL 3.3 core context so that transform feedback, geometry shaders, and texture buffer objects are available.
+
+Usage Notes
+-----------
+- Construct `ParticleSet` with a `drawScale` that represents your world units (e.g. window width) so that normalized parameters such as `attractionRadius` and `connectionRadius` scale correctly.
+- Call `add()` from the main thread; additions are queued and uploaded before the next GPU update.
+- Use the parameter group to tune runtime behavior: `timeStep`, `velocityDamping`, `attractionStrength`, `initialVelocityScale`, `sortNeighborWindow`, `lineFadeExponent`, etc.—they map directly to shader uniforms.
+- Strategies work as before: choose points, lines, or both. Connections automatically fade with distance and wrap around the viewport edges.

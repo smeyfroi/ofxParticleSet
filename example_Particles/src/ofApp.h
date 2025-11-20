@@ -2,6 +2,7 @@
 
 #include "ofMain.h"
 #include "ofxParticleSet.h"
+#include "ofxGui.h"
 
 class ofApp: public ofBaseApp{
 public:
@@ -21,5 +22,10 @@ public:
   void gotMessage(ofMessage msg);
   
   ofFbo fbo;
-  ParticleSet particleSet { 768 };
+  ParticleSet particleSet { 1024 };
+  
+  bool guiVisible { true };
+  ofxPanel gui;
+  ofParameterGroup parameters; // I think we rely on this declaration coming after the synth to ensure that destructors are done in the right order
+
 };
