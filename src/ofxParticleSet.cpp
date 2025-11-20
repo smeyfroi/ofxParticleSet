@@ -2,24 +2,49 @@
 
 #include <algorithm>
 #include <cstring>
+#include <cstdint>
+#include <cmath>
 
 namespace {
 
-uint32_t expandBits(uint32_t v) {
-  v = (v | (v << 16)) & 0x030000FF;
-  v = (v | (v <<  8)) & 0x0300F00F;
-  v = (v | (v <<  4)) & 0x030C30C3;
-  v = (v | (v <<  2)) & 0x09249249;
-  return v;
+constexpr uint32_t MortonBits = 13u; // 8,192 buckets per axis (~0.85px at 7k)
+static_assert(MortonBits <= 21u, "MortonBits must remain <= 21 to fit masks");
+constexpr uint32_t MortonScale = (1u << MortonBits) - 1u;
+constexpr uint32_t MortonJitterBits = 10u; // hashed tie-breaker to decorrelate Z-order bands
+constexpr uint32_t MortonJitterMask = (1u << MortonJitterBits) - 1u;
+constexpr float MortonNeighborWindowMultiplier = 2.0f;
+
+uint64_t expandBits(uint32_t v) {
+
+  uint64_t x = static_cast<uint64_t>(v & 0x1FFFFFu);
+  x = (x | (x << 32)) & 0x1F00000000FFFFull;
+  x = (x | (x << 16)) & 0x1F0000FF0000FFull;
+  x = (x | (x << 8)) & 0x100F00F00F00F00Full;
+  x = (x | (x << 4)) & 0x10C30C30C30C30C3ull;
+  x = (x | (x << 2)) & 0x1249249249249249ull;
+  return x;
 }
 
-uint32_t calculateMortonCode(const glm::vec2& position) {
-  glm::vec2 normalised = glm::clamp(position, glm::vec2(0.0f), glm::vec2(0.999f));
-  uint32_t xx = static_cast<uint32_t>(normalised.x * 1024.0f);
-  uint32_t yy = static_cast<uint32_t>(normalised.y * 1024.0f);
-  xx = std::min(xx, 1023u);
-  yy = std::min(yy, 1023u);
+uint64_t calculateMortonCode(const glm::vec2& position) {
+  constexpr float upperBound = 0.999999f;
+  glm::vec2 normalised = glm::clamp(position, glm::vec2(0.0f), glm::vec2(upperBound));
+  glm::vec2 scaled = normalised * static_cast<float>(MortonScale);
+  uint32_t xx = static_cast<uint32_t>(scaled.x);
+  uint32_t yy = static_cast<uint32_t>(scaled.y);
+  xx = std::min<uint32_t>(xx, MortonScale);
+  yy = std::min<uint32_t>(yy, MortonScale);
   return expandBits(xx) | (expandBits(yy) << 1);
+}
+
+uint32_t hashIndex(uint32_t value) {
+  value ^= value >> 17;
+  value *= 0xed5ad4bbU;
+  value ^= value >> 11;
+  value *= 0xac4c1b51U;
+  value ^= value >> 15;
+  value *= 0x31848babU;
+  value ^= value >> 14;
+  return value;
 }
 
 } // namespace
@@ -496,6 +521,7 @@ void ParticleSet::runTransformFeedback(float deltaTime) {
 
   int readBuffer = currentBuffer;
   int writeBuffer = 1 - currentBuffer;
+  int neighborWindow = computeNeighborWindow();
 
   updateShader.begin();
   updateShader.setUniform1f("deltaTime", deltaTime);
@@ -505,7 +531,7 @@ void ParticleSet::runTransformFeedback(float deltaTime) {
   updateShader.setUniform1f("forceScale", forceScale.get());
   updateShader.setUniform1f("maxSpeed", maxSpeed.get());
   updateShader.setUniform1i("liveCount", static_cast<int>(liveCount));
-  updateShader.setUniform1i("sortNeighborWindow", sortNeighborWindow.get());
+  updateShader.setUniform1i("sortNeighborWindow", neighborWindow);
 
   glActiveTexture(GL_TEXTURE0);
   glBindTexture(GL_TEXTURE_BUFFER, particlePositionTexture);
@@ -563,7 +589,7 @@ void ParticleSet::readBackParticles() {
 
 void ParticleSet::rebuildSpatialSort() {
   struct Entry {
-    uint32_t morton;
+    uint64_t morton;
     int index;
   };
 
@@ -576,7 +602,9 @@ void ParticleSet::rebuildSpatialSort() {
     if (cpuParticles[i].flags.x <= 0.5f) continue;
     Entry entry;
     entry.index = i;
-    entry.morton = calculateMortonCode(cpuParticles[i].position);
+    uint64_t mortonBase = calculateMortonCode(cpuParticles[i].position);
+    uint64_t jitter = static_cast<uint64_t>(hashIndex(static_cast<uint32_t>(entry.index)) & MortonJitterMask);
+    entry.morton = (mortonBase << MortonJitterBits) | jitter;
     entries.push_back(entry);
   }
 
@@ -621,6 +649,20 @@ void ParticleSet::uploadSortedData() {
   }
 }
 
+int ParticleSet::computeNeighborWindow() const {
+  if (liveCount <= 1) {
+    return 0;
+  }
+  float normalizedRadius = std::max({ connectionRadius.get(), attractionRadius.get(), 0.0005f });
+  float approxCells = normalizedRadius * static_cast<float>(MortonScale);
+  int autoWindow = static_cast<int>(std::ceil(approxCells * MortonNeighborWindowMultiplier));
+  autoWindow = std::max(autoWindow, 1);
+  int userWindow = std::max(sortNeighborWindow.get(), 1);
+  int desired = std::max(autoWindow, userWindow);
+  int maxAllowed = static_cast<int>(liveCount) - 1;
+  return std::max(1, std::min(desired, maxAllowed));
+}
+
 void ParticleSet::update() {
   ensureCapacity();
   if (!resourcesReady || !shadersReady) return;
@@ -641,6 +683,7 @@ void ParticleSet::draw() {
   ofPushStyle();
 
   glm::vec2 viewportScale = glm::max(glm::vec2(ofGetWidth(), ofGetHeight()), glm::vec2(1.0f));
+  int neighborWindow = computeNeighborWindow();
 
   bool drawPoints = strategy.get() != STRATEGY_CONNECTIONS;
   bool drawLines = strategy.get() != STRATEGY_POINTS;
@@ -666,7 +709,7 @@ void ParticleSet::draw() {
     lineShader.setUniform1f("connectionRadius", connectionRadius.get());
     lineShader.setUniform1f("colourMultiplier", colourMultiplier.get());
     lineShader.setUniform1f("lineFadeExponent", lineFadeExponent.get());
-    lineShader.setUniform1i("sortNeighborWindow", sortNeighborWindow.get());
+    lineShader.setUniform1i("sortNeighborWindow", neighborWindow);
     lineShader.setUniform1i("liveCount", static_cast<int>(liveCount));
     lineShader.setUniform2f("viewportScale", viewportScale);
 

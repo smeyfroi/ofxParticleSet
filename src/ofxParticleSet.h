@@ -75,6 +75,7 @@ private:
   void rebuildSpatialSort();
   void uploadSortedData();
   void ensureCapacity();
+  int computeNeighborWindow() const;
 
   size_t liveCount = 0;
 
