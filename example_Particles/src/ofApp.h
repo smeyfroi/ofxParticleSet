@@ -22,7 +22,7 @@ public:
   void gotMessage(ofMessage msg);
   
   ofFbo fbo;
-  ParticleSet particleSet { 1024 };
+  ParticleSet particleSet;
   
   bool guiVisible { true };
   ofxPanel gui;

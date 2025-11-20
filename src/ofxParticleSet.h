@@ -48,7 +48,6 @@ public:
   ofParameter<float> particleDrawRadius { "particleDrawRadius", 3.0f, 0.5f, 16.0f };
   ofParameter<float> initialVelocityScale { "initialVelocityScale", 50.0f, 0.1f, 100.0f };
   ofParameter<float> maxSpeed { "maxSpeed", 50.0f, 1.0f, 100.0f };
-  ofParameter<float> wrapMargin { "wrapMargin", 0.0f, 0.0f, 0.25f };
   ofParameter<int> sortNeighborWindow { "sortNeighborWindow", 256, 16, 2048 };
   ofParameter<float> lineFadeExponent { "lineFadeExponent", 1.0f, 0.1f, 4.0f };
 
@@ -73,13 +72,10 @@ private:
   void uploadParticleToBuffer(int particleIndex);
   void runTransformFeedback(float deltaTime);
   void readBackParticles();
-  void rebuildSpatialSort(const glm::vec2& bounds);
+  void rebuildSpatialSort();
   void uploadSortedData();
   void ensureCapacity();
 
-  glm::vec2 getViewport() const;
-
-  float drawScale;
   size_t liveCount = 0;
 
   std::vector<GpuParticle> cpuParticles;

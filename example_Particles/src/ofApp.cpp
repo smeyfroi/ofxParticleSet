@@ -53,8 +53,15 @@ void ofApp::mouseMoved(int x, int y){
 
 //--------------------------------------------------------------
 void ofApp::mouseDragged(int x, int y, int button) {
+  glm::vec2 viewport = glm::max(glm::vec2(ofGetWidth(), ofGetHeight()), glm::vec2(1.0f));
+  glm::vec2 normalisedPosition = glm::clamp(glm::vec2(x, y) / viewport, glm::vec2(0.0f), glm::vec2(0.999f));
   for (int i = 0; i < 100; i++) {
-    particleSet.add({x, y}, {ofRandom(50.0)-25.0, ofRandom(50.0)-25.0}, ofFloatColor{ofRandom(1.0),ofRandom(1.0),ofRandom(1.0),ofRandom(1.0)}, ofRandom(0.1)-0.05);
+    glm::vec2 pixelVelocity { ofRandom(6.0f) - 3.0f, ofRandom(6.0f) - 3.0f };
+    glm::vec2 normalisedVelocity = pixelVelocity / viewport;
+    particleSet.add(normalisedPosition,
+                    normalisedVelocity,
+                    ofFloatColor{ofRandom(1.0f), ofRandom(1.0f), ofRandom(1.0f), ofRandom(1.0f)},
+                    ofRandom(0.1f) - 0.05f);
   }
 }
 

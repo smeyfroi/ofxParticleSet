@@ -13,9 +13,8 @@ uint32_t expandBits(uint32_t v) {
   return v;
 }
 
-uint32_t calculateMortonCode(const glm::vec2& position, const glm::vec2& bounds) {
-  glm::vec2 safeBounds = glm::max(bounds, glm::vec2(1.0f));
-  glm::vec2 normalised = glm::clamp(position / safeBounds, glm::vec2(0.0f), glm::vec2(0.999f));
+uint32_t calculateMortonCode(const glm::vec2& position) {
+  glm::vec2 normalised = glm::clamp(position, glm::vec2(0.0f), glm::vec2(0.999f));
   uint32_t xx = static_cast<uint32_t>(normalised.x * 1024.0f);
   uint32_t yy = static_cast<uint32_t>(normalised.y * 1024.0f);
   xx = std::min(xx, 1023u);
@@ -25,8 +24,8 @@ uint32_t calculateMortonCode(const glm::vec2& position, const glm::vec2& bounds)
 
 } // namespace
 
-ParticleSet::ParticleSet(float drawScale_)
-: drawScale(drawScale_) {
+ParticleSet::ParticleSet(float drawScale_) {
+  (void)drawScale_;
   getParameterGroup();
   compileShaders();
   allocateResources(maxParticles.get());
@@ -53,7 +52,6 @@ ofParameterGroup& ParticleSet::getParameterGroup() {
     parameters.add(particleDrawRadius);
     parameters.add(initialVelocityScale);
     parameters.add(maxSpeed);
-    parameters.add(wrapMargin);
     parameters.add(sortNeighborWindow);
     parameters.add(lineFadeExponent);
   }
@@ -195,8 +193,6 @@ void ParticleSet::compileShaders() {
     uniform float attractionRadius;
     uniform float forceScale;
     uniform float maxSpeed;
-    uniform vec2 bounds;
-    uniform float wrapMargin;
     uniform int liveCount;
     uniform int sortNeighborWindow;
 
@@ -273,16 +269,8 @@ void ParticleSet::compileShaders() {
       }
 
       position += velocity * deltaTime;
-
-      float minX = -wrapMargin;
-      float maxX = bounds.x + wrapMargin;
-      float minY = -wrapMargin;
-      float maxY = bounds.y + wrapMargin;
-
-      if (position.x < minX) position.x += (maxX - minX);
-      if (position.x > maxX) position.x -= (maxX - minX);
-      if (position.y < minY) position.y += (maxY - minY);
-      if (position.y > maxY) position.y -= (maxY - minY);
+      position = fract(position);
+      position = clamp(position, vec2(0.0), vec2(0.999));
 
       lifetime.x -= deltaTime;
       if (lifetime.x <= 0.0) {
@@ -315,6 +303,7 @@ void ParticleSet::compileShaders() {
 
     uniform mat4 modelViewProjectionMatrix;
     uniform float colourMultiplier;
+    uniform vec2 viewportScale;
 
     out vec4 vColor;
     out float vAlive;
@@ -322,7 +311,8 @@ void ParticleSet::compileShaders() {
     void main() {
       vAlive = inFlags.x;
       vColor = vec4(inColor.rgb, inColor.a * colourMultiplier);
-      gl_Position = modelViewProjectionMatrix * vec4(inPosition, 0.0, 1.0);
+      vec2 worldPos = inPosition * viewportScale;
+      gl_Position = modelViewProjectionMatrix * vec4(worldPos, 0.0, 1.0);
       gl_PointSize = inSpinDraw.y;
     }
   )GLSL";
@@ -368,6 +358,7 @@ void ParticleSet::compileShaders() {
     uniform float lineFadeExponent;
     uniform int sortNeighborWindow;
     uniform int liveCount;
+    uniform vec2 viewportScale;
 
     uniform samplerBuffer particlePositions;
     uniform samplerBuffer particleColors;
@@ -376,13 +367,15 @@ void ParticleSet::compileShaders() {
     out vec4 gColor;
 
     void emitConnection(vec2 a, vec2 b, vec4 colorA, vec4 colorB, float alpha) {
+      vec2 scaledA = a * viewportScale;
+      vec2 scaledB = b * viewportScale;
       vec4 ca = vec4(colorA.rgb, colorA.a * colourMultiplier * alpha);
       vec4 cb = vec4(colorB.rgb, colorB.a * colourMultiplier * alpha);
       gColor = ca;
-      gl_Position = modelViewProjectionMatrix * vec4(a, 0.0, 1.0);
+      gl_Position = modelViewProjectionMatrix * vec4(scaledA, 0.0, 1.0);
       EmitVertex();
       gColor = cb;
-      gl_Position = modelViewProjectionMatrix * vec4(b, 0.0, 1.0);
+      gl_Position = modelViewProjectionMatrix * vec4(scaledB, 0.0, 1.0);
       EmitVertex();
       EndPrimitive();
     }
@@ -475,7 +468,7 @@ void ParticleSet::processPendingAdditions() {
     pendingParticles.pop_front();
 
     GpuParticle& particle = cpuParticles[index];
-    particle.position = datum.position;
+    particle.position = glm::clamp(datum.position, glm::vec2(0.0f), glm::vec2(0.999f));
     particle.velocity = datum.velocity * initialVelocityScale.get();
     particle.spinDraw = glm::vec2(datum.spin, datum.drawRadius);
     particle.color = glm::vec4(datum.color.r, datum.color.g, datum.color.b, datum.color.a);
@@ -498,12 +491,6 @@ void ParticleSet::uploadParticleToBuffer(int particleIndex) {
   glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
-glm::vec2 ParticleSet::getViewport() const {
-  float width = std::max(1.0f, static_cast<float>(ofGetWidth()));
-  float height = std::max(1.0f, static_cast<float>(ofGetHeight()));
-  return { width, height };
-}
-
 void ParticleSet::runTransformFeedback(float deltaTime) {
   if (!resourcesReady || !shadersReady) return;
 
@@ -514,12 +501,9 @@ void ParticleSet::runTransformFeedback(float deltaTime) {
   updateShader.setUniform1f("deltaTime", deltaTime);
   updateShader.setUniform1f("velocityDamping", velocityDamping.get());
   updateShader.setUniform1f("attractionStrength", attractionStrength.get());
-  updateShader.setUniform1f("attractionRadius", attractionRadius.get() * drawScale);
-  updateShader.setUniform1f("forceScale", forceScale.get() * drawScale);
+  updateShader.setUniform1f("attractionRadius", attractionRadius.get());
+  updateShader.setUniform1f("forceScale", forceScale.get());
   updateShader.setUniform1f("maxSpeed", maxSpeed.get());
-  glm::vec2 bounds = getViewport();
-  updateShader.setUniform2f("bounds", bounds);
-  updateShader.setUniform1f("wrapMargin", wrapMargin.get() * drawScale);
   updateShader.setUniform1i("liveCount", static_cast<int>(liveCount));
   updateShader.setUniform1i("sortNeighborWindow", sortNeighborWindow.get());
 
@@ -577,7 +561,7 @@ void ParticleSet::readBackParticles() {
   }
 }
 
-void ParticleSet::rebuildSpatialSort(const glm::vec2& bounds) {
+void ParticleSet::rebuildSpatialSort() {
   struct Entry {
     uint32_t morton;
     int index;
@@ -592,7 +576,7 @@ void ParticleSet::rebuildSpatialSort(const glm::vec2& bounds) {
     if (cpuParticles[i].flags.x <= 0.5f) continue;
     Entry entry;
     entry.index = i;
-    entry.morton = calculateMortonCode(cpuParticles[i].position, bounds);
+    entry.morton = calculateMortonCode(cpuParticles[i].position);
     entries.push_back(entry);
   }
 
@@ -647,7 +631,7 @@ void ParticleSet::update() {
   delta = std::clamp(delta, 0.0001f, 0.1f);
   runTransformFeedback(delta);
   readBackParticles();
-  rebuildSpatialSort(getViewport());
+  rebuildSpatialSort();
   uploadSortedData();
 }
 
@@ -655,6 +639,8 @@ void ParticleSet::draw() {
   if (!resourcesReady || !shadersReady || liveCount == 0) return;
 
   ofPushStyle();
+
+  glm::vec2 viewportScale = glm::max(glm::vec2(ofGetWidth(), ofGetHeight()), glm::vec2(1.0f));
 
   bool drawPoints = strategy.get() != STRATEGY_CONNECTIONS;
   bool drawLines = strategy.get() != STRATEGY_POINTS;
@@ -664,6 +650,7 @@ void ParticleSet::draw() {
     pointShader.begin();
     pointShader.setUniformMatrix4f("modelViewProjectionMatrix", ofGetCurrentMatrix(OF_MATRIX_PROJECTION) * ofGetCurrentMatrix(OF_MATRIX_MODELVIEW));
     pointShader.setUniform1f("colourMultiplier", colourMultiplier.get());
+    pointShader.setUniform2f("viewportScale", viewportScale);
 
     glBindVertexArray(vaos[currentBuffer]);
     glDrawArrays(GL_POINTS, 0, maxParticles.get());
@@ -676,11 +663,12 @@ void ParticleSet::draw() {
   if (drawLines && proxyVbo.getIsAllocated() && liveCount > 1) {
     lineShader.begin();
     lineShader.setUniformMatrix4f("modelViewProjectionMatrix", ofGetCurrentMatrix(OF_MATRIX_PROJECTION) * ofGetCurrentMatrix(OF_MATRIX_MODELVIEW));
-    lineShader.setUniform1f("connectionRadius", connectionRadius.get() * drawScale);
+    lineShader.setUniform1f("connectionRadius", connectionRadius.get());
     lineShader.setUniform1f("colourMultiplier", colourMultiplier.get());
     lineShader.setUniform1f("lineFadeExponent", lineFadeExponent.get());
     lineShader.setUniform1i("sortNeighborWindow", sortNeighborWindow.get());
     lineShader.setUniform1i("liveCount", static_cast<int>(liveCount));
+    lineShader.setUniform2f("viewportScale", viewportScale);
 
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_BUFFER, particlePositionTexture);
