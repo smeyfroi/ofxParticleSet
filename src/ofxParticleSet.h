@@ -26,7 +26,7 @@ public:
   ~ParticleSet();
 
   void update();
-  void draw();
+  void draw(glm::vec2 viewportScale);
   void add(glm::vec2 position, glm::vec2 velocity, ofFloatColor color, float spin, float drawRadius = -1.0f);
 
   size_t size() const { return liveCount; }
@@ -47,7 +47,7 @@ public:
   ofParameter<float> colourMultiplier { "colourMultiplier", 0.2f, 0.0f, 1.0f };
   ofParameter<float> particleDrawRadius { "particleDrawRadius", 3.0f, 0.5f, 16.0f };
   ofParameter<float> initialVelocityScale { "initialVelocityScale", 50.0f, 0.1f, 100.0f };
-  ofParameter<float> maxSpeed { "maxSpeed", 50.0f, 1.0f, 100.0f };
+  ofParameter<float> maxSpeed { "maxSpeed", 10.0f, 1.0f, 100.0f };
   ofParameter<int> sortNeighborWindow { "sortNeighborWindow", 256, 16, 2048 };
   ofParameter<float> lineFadeExponent { "lineFadeExponent", 1.0f, 0.1f, 4.0f };
 

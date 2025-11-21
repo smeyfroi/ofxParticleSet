@@ -20,7 +20,8 @@ void ofApp::update(){
   fbo.begin();
   ofBlendMode(OF_BLENDMODE_ALPHA);
   ofClear(ofFloatColor { 0.0, 0.0, 0.0, 1.0});
-  particleSet.draw();
+  auto viewportScale = glm::max(glm::vec2(ofGetWidth(), ofGetHeight()), glm::vec2(1.0f));
+  particleSet.draw(viewportScale);
   fbo.end();
 }
 

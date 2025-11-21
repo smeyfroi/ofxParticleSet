@@ -677,12 +677,11 @@ void ParticleSet::update() {
   uploadSortedData();
 }
 
-void ParticleSet::draw() {
+void ParticleSet::draw(glm::vec2 viewportScale) {
   if (!resourcesReady || !shadersReady || liveCount == 0) return;
 
   ofPushStyle();
 
-  glm::vec2 viewportScale = glm::max(glm::vec2(ofGetWidth(), ofGetHeight()), glm::vec2(1.0f));
   int neighborWindow = computeNeighborWindow();
 
   bool drawPoints = strategy.get() != STRATEGY_CONNECTIONS;
