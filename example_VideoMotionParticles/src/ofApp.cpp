@@ -4,6 +4,7 @@
 void ofApp::setup() {
   ofDisableArbTex(); // required for texture2D to work in GLSL, makes texture coords normalized
   ofEnableAlphaBlending();
+  ofSetFrameRate(30);
   ofBackground(ofFloatColor{0.0, 0.0, 0.0, 1.0});
 
   fbo.allocate(ofGetWindowWidth(), ofGetWindowHeight(), GL_RGBA32F);
@@ -11,7 +12,7 @@ void ofApp::setup() {
   ofClear(ofFloatColor {0.0, 0.0, 0.0, 0.0});
   fbo.end();
   
-  motionFromVideo.load(ofToDataPath("trimmed.mov"), false); // don't mute
+  motionFromVideo.load("/Users/steve/Documents/music-source-material/belfast/trombone-trimmed.mov", true); // mute
 //  motionFromVideo.load(ofToDataPath("violin-trimmed.mov"));
   
   parameters.add(particleSet.getParameterGroup());
@@ -24,11 +25,11 @@ void ofApp::setup() {
 //--------------------------------------------------------------
 void ofApp::update(){
   motionFromVideo.update();
-  
+  auto scale = 1.0f / motionFromVideo.getSize();
   for (int i = 0; i < 100; i++) {
     if (auto vec = motionFromVideo.trySampleMotion()) {
-      particleSet.add({vec->x, vec->y},
-                      {vec->z * velocityScale, vec->w * velocityScale},
+      particleSet.add({vec->x * scale.x, vec->y * scale.y},
+                      {vec->z * velocityScale * scale.x, vec->w * velocityScale * scale.y},
                       ofFloatColor{ofRandom(1.0), ofRandom(1.0), ofRandom(1.0), ofRandom(0.2)},
                       particleSpin);
     }
@@ -45,20 +46,24 @@ void ofApp::update(){
     ofDrawRectangle(0, 0, fbo.getWidth(), fbo.getHeight());
     // particles
     ofEnableBlendMode(OF_BLENDMODE_ADD);
-    particleSet.draw();
+    auto viewportScale = glm::max(glm::vec2(ofGetWidth(), ofGetHeight()), glm::vec2(1.0f));
+    particleSet.draw(viewportScale);
   }
   fbo.end();
 }
 
 //--------------------------------------------------------------
 void ofApp::draw(){
-  ofEnableBlendMode(OF_BLENDMODE_ALPHA);
+  ofEnableBlendMode(OF_BLENDMODE_DISABLED);
   ofSetColor(ofFloatColor { 1.0, 1.0, 1.0, 1.0 });
   fbo.draw(0, 0);
   
+  ofEnableBlendMode(OF_BLENDMODE_ALPHA);
+  ofSetColor(ofFloatColor { 1.0, 1.0, 1.0, 0.05 });
+  motionFromVideo.getVideoFbo().draw(0, 0, ofGetWindowWidth(), ofGetWindowHeight());
 //  ofEnableBlendMode(OF_BLENDMODE_ALPHA);
-//  ofSetColor(ofFloatColor { 1.0, 1.0, 1.0, 0.05 });
-//  motionFromVideo.getVideoFbo().draw(0, 0, ofGetWindowWidth(), ofGetWindowHeight());
+//  ofSetColor(ofFloatColor { 1.0, 1.0, 1.0, 0.2 });
+//  motionFromVideo.getMotionFbo().draw(0, 0, ofGetWindowWidth(), ofGetWindowHeight());
 
   gui.draw();
   ofSetWindowTitle(ofToString(ofGetFrameRate()) + " / " + ofToString(particleSet.size()));

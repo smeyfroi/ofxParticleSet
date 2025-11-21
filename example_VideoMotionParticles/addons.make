@@ -1,7 +1,6 @@
 ofxGui
 ofxRenderer
 ofxMotionFromVideo
-ofxSpatialHash
 ofxParticleSet
 ofxSelfOrganizingMap
 ofxSomPalette

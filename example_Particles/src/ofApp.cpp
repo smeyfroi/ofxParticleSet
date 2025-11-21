@@ -18,16 +18,18 @@ void ofApp::setup() {
 void ofApp::update(){
   particleSet.update();
   fbo.begin();
-  ofBlendMode(OF_BLENDMODE_ALPHA);
   ofClear(ofFloatColor { 0.0, 0.0, 0.0, 1.0});
   auto viewportScale = glm::max(glm::vec2(ofGetWidth(), ofGetHeight()), glm::vec2(1.0f));
+  ofEnableBlendMode(OF_BLENDMODE_ADD);
+  //  ofBlendMode(OF_BLENDMODE_SCREEN);
+//    ofBlendMode(OF_BLENDMODE_ALPHA);
   particleSet.draw(viewportScale);
   fbo.end();
 }
 
 //--------------------------------------------------------------
 void ofApp::draw(){
-  ofBlendMode(OF_BLENDMODE_NONE);
+  ofEnableBlendMode(OF_BLENDMODE_DISABLED);
   fbo.draw(0, 0);
   if (guiVisible) gui.draw();
   ofSetWindowTitle(ofToString(ofGetFrameRate()) + " / " + ofToString(particleSet.size()));

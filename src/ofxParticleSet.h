@@ -22,7 +22,7 @@ public:
     STRATEGY_CONNECTIONS_AND_POINTS = 2
   };
 
-  ParticleSet(float drawScale_ = 1.0f);
+  ParticleSet();
   ~ParticleSet();
 
   void update();

@@ -49,8 +49,7 @@ uint32_t hashIndex(uint32_t value) {
 
 } // namespace
 
-ParticleSet::ParticleSet(float drawScale_) {
-  (void)drawScale_;
+ParticleSet::ParticleSet() {
   getParameterGroup();
   compileShaders();
   allocateResources(maxParticles.get());
