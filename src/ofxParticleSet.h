@@ -1,10 +1,12 @@
 #pragma once
 
-#include "ofMain.h"
 #include <array>
 #include <deque>
+#include <optional>
 #include <string>
 #include <vector>
+
+#include "ofMain.h"
 
 struct NewParticleDatum {
   glm::vec2 position;
@@ -16,6 +18,17 @@ struct NewParticleDatum {
 
 class ParticleSet {
 public:
+  struct ParameterOverrides {
+    std::optional<float> timeStep;
+    std::optional<float> velocityDamping;
+    std::optional<float> attractionStrength;
+    std::optional<float> attractionRadius;
+    std::optional<float> forceScale;
+    std::optional<float> connectionRadius;
+    std::optional<float> colourMultiplier;
+    std::optional<float> maxSpeed;
+  };
+
   enum Strategy {
     STRATEGY_POINTS = 0,
     STRATEGY_CONNECTIONS = 1,
@@ -24,6 +37,9 @@ public:
 
   ParticleSet();
   ~ParticleSet();
+
+  void setParameterOverrides(const ParameterOverrides& overrides);
+  void clearParameterOverrides();
 
   void update();
   void draw(glm::vec2 viewportScale);
@@ -63,6 +79,15 @@ private:
 
   static constexpr size_t ParticleStride = sizeof(GpuParticle);
 
+  float getTimeStepEffective() const;
+  float getVelocityDampingEffective() const;
+  float getAttractionStrengthEffective() const;
+  float getAttractionRadiusEffective() const;
+  float getForceScaleEffective() const;
+  float getConnectionRadiusEffective() const;
+  float getColourMultiplierEffective() const;
+  float getMaxSpeedEffective() const;
+
   void allocateResources(int count);
   void destroyResources();
   void compileShaders();
@@ -76,6 +101,8 @@ private:
   void uploadSortedData();
   void ensureCapacity();
   int computeNeighborWindow() const;
+
+  ParameterOverrides parameterOverrides;
 
   size_t liveCount = 0;
 

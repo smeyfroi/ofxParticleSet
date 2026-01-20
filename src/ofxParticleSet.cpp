@@ -1,9 +1,9 @@
 #include "ofxParticleSet.h"
 
 #include <algorithm>
-#include <cstring>
-#include <cstdint>
 #include <cmath>
+#include <cstdint>
+#include <cstring>
 
 namespace {
 
@@ -58,6 +58,57 @@ ParticleSet::ParticleSet() {
 
 ParticleSet::~ParticleSet() {
   destroyResources();
+}
+
+void ParticleSet::setParameterOverrides(const ParameterOverrides& overrides) {
+  if (parameterOverrides.timeStep == overrides.timeStep &&
+      parameterOverrides.velocityDamping == overrides.velocityDamping &&
+      parameterOverrides.attractionStrength == overrides.attractionStrength &&
+      parameterOverrides.attractionRadius == overrides.attractionRadius &&
+      parameterOverrides.forceScale == overrides.forceScale &&
+      parameterOverrides.connectionRadius == overrides.connectionRadius &&
+      parameterOverrides.colourMultiplier == overrides.colourMultiplier &&
+      parameterOverrides.maxSpeed == overrides.maxSpeed) {
+    return;
+  }
+
+  parameterOverrides = overrides;
+}
+
+void ParticleSet::clearParameterOverrides() {
+  setParameterOverrides(ParameterOverrides {});
+}
+
+float ParticleSet::getTimeStepEffective() const {
+  return parameterOverrides.timeStep.value_or(timeStep.get());
+}
+
+float ParticleSet::getVelocityDampingEffective() const {
+  return parameterOverrides.velocityDamping.value_or(velocityDamping.get());
+}
+
+float ParticleSet::getAttractionStrengthEffective() const {
+  return parameterOverrides.attractionStrength.value_or(attractionStrength.get());
+}
+
+float ParticleSet::getAttractionRadiusEffective() const {
+  return parameterOverrides.attractionRadius.value_or(attractionRadius.get());
+}
+
+float ParticleSet::getForceScaleEffective() const {
+  return parameterOverrides.forceScale.value_or(forceScale.get());
+}
+
+float ParticleSet::getConnectionRadiusEffective() const {
+  return parameterOverrides.connectionRadius.value_or(connectionRadius.get());
+}
+
+float ParticleSet::getColourMultiplierEffective() const {
+  return parameterOverrides.colourMultiplier.value_or(colourMultiplier.get());
+}
+
+float ParticleSet::getMaxSpeedEffective() const {
+  return parameterOverrides.maxSpeed.value_or(maxSpeed.get());
 }
 
 ofParameterGroup& ParticleSet::getParameterGroup() {
@@ -178,11 +229,11 @@ void ParticleSet::destroyResources() {
   }
   if (vaos[0] != 0) {
     glDeleteVertexArrays(2, vaos.data());
-    vaos = {0, 0};
+    vaos = { 0, 0 };
   }
   if (vbos[0] != 0) {
     glDeleteBuffers(2, vbos.data());
-    vbos = {0, 0};
+    vbos = { 0, 0 };
   }
   auto deleteBufferAndTexture = [](GLuint& buffer, GLuint& texture) {
     if (buffer != 0) {
@@ -484,7 +535,7 @@ void ParticleSet::processPendingAdditions() {
   if (pendingParticles.empty() || freeList.empty()) {
     return;
   }
-  float baseTimeStep = std::max(timeStep.get(), 0.0001f);
+  float baseTimeStep = std::max(getTimeStepEffective(), 0.0001f);
   while (!pendingParticles.empty() && !freeList.empty()) {
     int index = freeList.back();
     freeList.pop_back();
@@ -524,11 +575,11 @@ void ParticleSet::runTransformFeedback(float deltaTime) {
 
   updateShader.begin();
   updateShader.setUniform1f("deltaTime", deltaTime);
-  updateShader.setUniform1f("velocityDamping", velocityDamping.get());
-  updateShader.setUniform1f("attractionStrength", attractionStrength.get());
-  updateShader.setUniform1f("attractionRadius", attractionRadius.get());
-  updateShader.setUniform1f("forceScale", forceScale.get());
-  updateShader.setUniform1f("maxSpeed", maxSpeed.get());
+  updateShader.setUniform1f("velocityDamping", getVelocityDampingEffective());
+  updateShader.setUniform1f("attractionStrength", getAttractionStrengthEffective());
+  updateShader.setUniform1f("attractionRadius", getAttractionRadiusEffective());
+  updateShader.setUniform1f("forceScale", getForceScaleEffective());
+  updateShader.setUniform1f("maxSpeed", getMaxSpeedEffective());
   updateShader.setUniform1i("liveCount", static_cast<int>(liveCount));
   updateShader.setUniform1i("sortNeighborWindow", neighborWindow);
 
@@ -652,7 +703,7 @@ int ParticleSet::computeNeighborWindow() const {
   if (liveCount <= 1) {
     return 0;
   }
-  float normalizedRadius = std::max({ connectionRadius.get(), attractionRadius.get(), 0.0005f });
+  float normalizedRadius = std::max({ getConnectionRadiusEffective(), getAttractionRadiusEffective(), 0.0005f });
   float approxCells = normalizedRadius * static_cast<float>(MortonScale);
   int autoWindow = static_cast<int>(std::ceil(approxCells * MortonNeighborWindowMultiplier));
   autoWindow = std::max(autoWindow, 1);
@@ -668,7 +719,8 @@ void ParticleSet::update() {
 
   processPendingAdditions();
 
-  float delta = timeStep.get() > 0.0f ? timeStep.get() : ofGetLastFrameTime();
+  float effectiveTimeStep = getTimeStepEffective();
+  float delta = effectiveTimeStep > 0.0f ? effectiveTimeStep : ofGetLastFrameTime();
   delta = std::clamp(delta, 0.0001f, 0.1f);
   runTransformFeedback(delta);
   readBackParticles();
@@ -690,7 +742,7 @@ void ParticleSet::draw(glm::vec2 viewportScale) {
     glEnable(GL_PROGRAM_POINT_SIZE);
     pointShader.begin();
     pointShader.setUniformMatrix4f("modelViewProjectionMatrix", ofGetCurrentMatrix(OF_MATRIX_PROJECTION) * ofGetCurrentMatrix(OF_MATRIX_MODELVIEW));
-    pointShader.setUniform1f("colourMultiplier", colourMultiplier.get());
+    pointShader.setUniform1f("colourMultiplier", getColourMultiplierEffective());
     pointShader.setUniform2f("viewportScale", viewportScale);
 
     glBindVertexArray(vaos[currentBuffer]);
@@ -704,8 +756,8 @@ void ParticleSet::draw(glm::vec2 viewportScale) {
   if (drawLines && proxyVbo.getIsAllocated() && liveCount > 1) {
     lineShader.begin();
     lineShader.setUniformMatrix4f("modelViewProjectionMatrix", ofGetCurrentMatrix(OF_MATRIX_PROJECTION) * ofGetCurrentMatrix(OF_MATRIX_MODELVIEW));
-    lineShader.setUniform1f("connectionRadius", connectionRadius.get());
-    lineShader.setUniform1f("colourMultiplier", colourMultiplier.get());
+    lineShader.setUniform1f("connectionRadius", getConnectionRadiusEffective());
+    lineShader.setUniform1f("colourMultiplier", getColourMultiplierEffective());
     lineShader.setUniform1f("lineFadeExponent", lineFadeExponent.get());
     lineShader.setUniform1i("sortNeighborWindow", neighborWindow);
     lineShader.setUniform1i("liveCount", static_cast<int>(liveCount));

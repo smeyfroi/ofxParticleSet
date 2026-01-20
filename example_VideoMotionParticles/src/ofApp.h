@@ -26,7 +26,7 @@ private:
   ofFbo fbo;
   ParticleSet particleSet;
   MotionFromVideo motionFromVideo;
-
+ 
   ofxPanel gui;
   ofParameterGroup parameters;
   ofParameter<float> particleSpin {"particleSpin", 0.0, -0.1, 0.1};
