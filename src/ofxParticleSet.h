@@ -52,18 +52,18 @@ public:
 
   ofParameterGroup parameters;
   ofParameter<int> strategy { "strategy", STRATEGY_CONNECTIONS_AND_POINTS, STRATEGY_POINTS, STRATEGY_CONNECTIONS_AND_POINTS };
-  ofParameter<int> maxParticles { "maxParticles", 5000, 100, 20000 };
+  ofParameter<int> maxParticles { "maxParticles", 5000, 100, 10000 };
   ofParameter<int> maxParticleAge { "maxParticleAge", 500, 10, 5000 };
-  ofParameter<float> timeStep { "timeStep", 0.016f, 0.001f, 0.1f };
+  ofParameter<float> timeStep { "timeStep", 0.016f, 0.001f, 0.05f };
   ofParameter<float> velocityDamping { "velocityDamping", 0.995f, 0.99f, 1.0f };
-  ofParameter<float> attractionStrength { "attractionStrength", -0.02f, -0.5f, 0.5f };
-  ofParameter<float> attractionRadius { "attractionRadius", 0.1f, 0.0f, 1.0f }; // normalised
-  ofParameter<float> forceScale { "forceScale", 0.1f, 0.0f, 1.0f }; // normalised
-  ofParameter<float> connectionRadius { "connectionRadius", 0.05f, 0.0f, 1.0f }; // normalised
+  ofParameter<float> attractionStrength { "attractionStrength", -0.02f, -0.1f, 0.1f };
+  ofParameter<float> attractionRadius { "attractionRadius", 0.1f, 0.0f, 0.3f }; // normalised
+  ofParameter<float> forceScale { "forceScale", 0.1f, 0.0f, 0.3f }; // normalised
+  ofParameter<float> connectionRadius { "connectionRadius", 0.05f, 0.0f, 0.3f }; // normalised
   ofParameter<float> colourMultiplier { "colourMultiplier", 0.2f, 0.0f, 1.0f };
-  ofParameter<float> particleDrawRadius { "particleDrawRadius", 3.0f, 0.5f, 16.0f };
+  ofParameter<float> particleDrawRadius { "particleDrawRadius", 3.0f, 0.5f, 12.0f };
   ofParameter<float> initialVelocityScale { "initialVelocityScale", 50.0f, 0.1f, 100.0f };
-  ofParameter<float> maxSpeed { "maxSpeed", 10.0f, 1.0f, 100.0f };
+  ofParameter<float> maxSpeed { "maxSpeed", 10.0f, 1.0f, 20.0f };
   ofParameter<int> sortNeighborWindow { "sortNeighborWindow", 256, 16, 2048 };
   ofParameter<float> lineFadeExponent { "lineFadeExponent", 1.0f, 0.1f, 4.0f };
 
