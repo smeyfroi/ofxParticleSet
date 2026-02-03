@@ -385,7 +385,8 @@ void ParticleSet::compileShaders() {
 
     void main() {
       vAlive = inFlags.x;
-      vColor = vec4(inColor.rgb, inColor.a * colourMultiplier);
+      float a = inColor.a * colourMultiplier;
+      vColor = vec4(inColor.rgb * a, a);
       vec2 worldPos = inPosition * viewportScale;
       gl_Position = modelViewProjectionMatrix * vec4(worldPos, 0.0, 1.0);
       gl_PointSize = inSpinDraw.y;
@@ -444,8 +445,10 @@ void ParticleSet::compileShaders() {
     void emitConnection(vec2 a, vec2 b, vec4 colorA, vec4 colorB, float alpha) {
       vec2 scaledA = a * viewportScale;
       vec2 scaledB = b * viewportScale;
-      vec4 ca = vec4(colorA.rgb, colorA.a * colourMultiplier * alpha);
-      vec4 cb = vec4(colorB.rgb, colorB.a * colourMultiplier * alpha);
+      float aA = colorA.a * colourMultiplier * alpha;
+      float aB = colorB.a * colourMultiplier * alpha;
+      vec4 ca = vec4(colorA.rgb * aA, aA);
+      vec4 cb = vec4(colorB.rgb * aB, aB);
       gColor = ca;
       gl_Position = modelViewProjectionMatrix * vec4(scaledA, 0.0, 1.0);
       EmitVertex();
