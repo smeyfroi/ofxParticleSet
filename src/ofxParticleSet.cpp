@@ -47,6 +47,20 @@ uint32_t hashIndex(uint32_t value) {
   return value;
 }
 
+float sanitize01(float v) {
+  if (!std::isfinite(v)) return 0.0f;
+  return std::clamp(v, 0.0f, 1.0f);
+}
+
+glm::vec4 sanitizeColor(glm::vec4 c) {
+  return {
+    sanitize01(c.r),
+    sanitize01(c.g),
+    sanitize01(c.b),
+    sanitize01(c.a),
+  };
+}
+
 } // namespace
 
 ParticleSet::ParticleSet() {
@@ -383,10 +397,26 @@ void ParticleSet::compileShaders() {
     out vec4 vColor;
     out float vAlive;
 
+    bool badFloat(float v) {
+      return !(v > -1e10 && v < 1e10);
+    }
+    bool badVec4(vec4 v) {
+      return badFloat(v.x) || badFloat(v.y) || badFloat(v.z) || badFloat(v.w);
+    }
+
     void main() {
       vAlive = inFlags.x;
-      float a = inColor.a * colourMultiplier;
-      vColor = vec4(inColor.rgb * a, a);
+      vec4 c = inColor;
+      float mult = colourMultiplier;
+      if (vAlive < 0.5 || badVec4(c) || badFloat(mult)) {
+        vAlive = 0.0;
+        vColor = vec4(0.0);
+      } else {
+        c = clamp(c, 0.0, 1.0);
+        mult = clamp(mult, 0.0, 1.0);
+        float a = clamp(c.a * mult, 0.0, 1.0);
+        vColor = vec4(c.rgb * a, a);
+      }
       vec2 worldPos = inPosition * viewportScale;
       gl_Position = modelViewProjectionMatrix * vec4(worldPos, 0.0, 1.0);
       gl_PointSize = inSpinDraw.y;
@@ -442,13 +472,27 @@ void ParticleSet::compileShaders() {
 
     out vec4 gColor;
 
+    bool badFloat(float v) {
+      return !(v > -1e10 && v < 1e10);
+    }
+    bool badVec4(vec4 v) {
+      return badFloat(v.x) || badFloat(v.y) || badFloat(v.z) || badFloat(v.w);
+    }
+
     void emitConnection(vec2 a, vec2 b, vec4 colorA, vec4 colorB, float alpha) {
+      if (badVec4(colorA) || badVec4(colorB) || badFloat(colourMultiplier) || badFloat(alpha)) {
+        return;
+      }
       vec2 scaledA = a * viewportScale;
       vec2 scaledB = b * viewportScale;
-      float aA = colorA.a * colourMultiplier * alpha;
-      float aB = colorB.a * colourMultiplier * alpha;
-      vec4 ca = vec4(colorA.rgb * aA, aA);
-      vec4 cb = vec4(colorB.rgb * aB, aB);
+      vec4 cA = clamp(colorA, 0.0, 1.0);
+      vec4 cB = clamp(colorB, 0.0, 1.0);
+      float mult = clamp(colourMultiplier, 0.0, 1.0);
+      float alphaC = clamp(alpha, 0.0, 1.0);
+      float aA = clamp(cA.a * mult * alphaC, 0.0, 1.0);
+      float aB = clamp(cB.a * mult * alphaC, 0.0, 1.0);
+      vec4 ca = vec4(cA.rgb * aA, aA);
+      vec4 cb = vec4(cB.rgb * aB, aB);
       gColor = ca;
       gl_Position = modelViewProjectionMatrix * vec4(scaledA, 0.0, 1.0);
       EmitVertex();
@@ -549,7 +593,7 @@ void ParticleSet::processPendingAdditions() {
     particle.position = glm::clamp(datum.position, glm::vec2(0.0f), glm::vec2(0.999f));
     particle.velocity = datum.velocity * initialVelocityScale.get();
     particle.spinDraw = glm::vec2(datum.spin, datum.drawRadius);
-    particle.color = glm::vec4(datum.color.r, datum.color.g, datum.color.b, datum.color.a);
+    particle.color = sanitizeColor(glm::vec4(datum.color.r, datum.color.g, datum.color.b, datum.color.a));
     float lifespanSteps = ofRandom(maxParticleAge.get());
     float lifetimeSeconds = std::max(lifespanSteps * baseTimeStep, baseTimeStep);
     particle.lifetime = glm::vec2(lifetimeSeconds, lifetimeSeconds);
@@ -671,7 +715,7 @@ void ParticleSet::rebuildSpatialSort() {
     inverseSortedIndices[originalIndex] = static_cast<int>(i);
     sortedIndices[i] = originalIndex;
     sortedPositions[i] = cpuParticles[originalIndex].position;
-    sortedColors[i] = cpuParticles[originalIndex].color;
+    sortedColors[i] = sanitizeColor(cpuParticles[originalIndex].color);
   }
   liveCount = sortedCount;
 }
