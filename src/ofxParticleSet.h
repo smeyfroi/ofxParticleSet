@@ -60,7 +60,7 @@ public:
   ofParameter<float> attractionRadius { "attractionRadius", 0.1f, 0.0f, 0.3f }; // normalised
   ofParameter<float> forceScale { "forceScale", 0.1f, 0.0f, 0.3f }; // normalised
   ofParameter<float> connectionRadius { "connectionRadius", 0.05f, 0.0f, 0.3f }; // normalised
-  ofParameter<float> colourMultiplier { "colourMultiplier", 0.2f, 0.0f, 1.0f };
+  ofParameter<float> colourMultiplier { "colourMultiplier", 1.0f, 0.0f, 1.0f };
   ofParameter<float> particleDrawRadius { "particleDrawRadius", 3.0f, 0.5f, 12.0f };
   ofParameter<float> initialVelocityScale { "initialVelocityScale", 50.0f, 0.1f, 100.0f };
   ofParameter<float> maxSpeed { "maxSpeed", 10.0f, 1.0f, 20.0f };
