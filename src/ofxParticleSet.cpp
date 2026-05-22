@@ -82,7 +82,8 @@ void ParticleSet::setParameterOverrides(const ParameterOverrides& overrides) {
       parameterOverrides.forceScale == overrides.forceScale &&
       parameterOverrides.connectionRadius == overrides.connectionRadius &&
       parameterOverrides.colourMultiplier == overrides.colourMultiplier &&
-      parameterOverrides.maxSpeed == overrides.maxSpeed) {
+      parameterOverrides.maxSpeed == overrides.maxSpeed &&
+      parameterOverrides.sortNeighborWindow == overrides.sortNeighborWindow) {
     return;
   }
 
@@ -750,13 +751,24 @@ int ParticleSet::computeNeighborWindow() const {
   if (liveCount <= 1) {
     return 0;
   }
+  int maxAllowed = static_cast<int>(liveCount) - 1;
+  // When the override is explicitly set (e.g. by the budget controller in
+  // `ParticleSetMod`), force the requested window directly and bypass
+  // `autoWindow`. This is graceful-degradation: under GPU pressure we accept
+  // some loss of connectivity (sparser lines, weaker field forces) in exchange
+  // for a tractable per-particle workload. autoWindow's role of "ensure enough
+  // cells for the Morton spatial sort to find neighbours" is being deliberately
+  // sacrificed when the caller asks for it.
+  if (parameterOverrides.sortNeighborWindow.has_value()) {
+    int forced = std::max(1, parameterOverrides.sortNeighborWindow.value());
+    return std::max(1, std::min(forced, maxAllowed));
+  }
   float normalizedRadius = std::max({ getConnectionRadiusEffective(), getAttractionRadiusEffective(), 0.0005f });
   float approxCells = normalizedRadius * static_cast<float>(MortonScale);
   int autoWindow = static_cast<int>(std::ceil(approxCells * MortonNeighborWindowMultiplier));
   autoWindow = std::max(autoWindow, 1);
   int userWindow = std::max(sortNeighborWindow.get(), 1);
   int desired = std::max(autoWindow, userWindow);
-  int maxAllowed = static_cast<int>(liveCount) - 1;
   return std::max(1, std::min(desired, maxAllowed));
 }
 

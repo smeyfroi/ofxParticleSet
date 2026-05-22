@@ -27,6 +27,11 @@ public:
     std::optional<float> connectionRadius;
     std::optional<float> colourMultiplier;
     std::optional<float> maxSpeed;
+    // Neighbour search window used by both the TFB physics shader and the
+    // line geometry shader. Dominant cost multiplier (work per particle is
+    // O(window)). Override here so the budget controller can shrink it under
+    // GPU pressure. `nullopt` defers to the `sortNeighborWindow` parameter.
+    std::optional<int>   sortNeighborWindow;
   };
 
   enum Strategy {
