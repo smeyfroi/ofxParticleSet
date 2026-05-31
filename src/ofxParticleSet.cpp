@@ -579,6 +579,26 @@ void ParticleSet::add(glm::vec2 position, glm::vec2 velocity, ofFloatColor color
   pendingParticles.push_back(datum);
 }
 
+void ParticleSet::cull(float fraction) {
+  if (!resourcesReady) return;
+  fraction = std::clamp(fraction, 0.0f, 1.0f);
+  if (fraction <= 0.0f) return;
+
+  // Mark a random fraction of live particles dead in the CPU mirror and push
+  // each change into the buffer the next transform-feedback pass reads
+  // (vbos[currentBuffer]). The update shader treats flags.x < 0.5 as dead and
+  // stops advancing/drawing it; the draw shader discards it. liveCount/freeList
+  // are recomputed by the next readBackParticles(), so we don't touch them here.
+  for (int i = 0; i < static_cast<int>(cpuParticles.size()); ++i) {
+    GpuParticle& p = cpuParticles[i];
+    if (p.flags.x <= 0.5f) continue;          // already dead
+    if (ofRandom(1.0f) >= fraction) continue; // survives this cull
+    p.flags = glm::vec2(0.0f, 0.0f);
+    p.lifetime.x = 0.0f;
+    uploadParticleToBuffer(i);
+  }
+}
+
 void ParticleSet::processPendingAdditions() {
   if (pendingParticles.empty() || freeList.empty()) {
     return;

@@ -50,6 +50,13 @@ public:
   void draw(glm::vec2 viewportScale);
   void add(glm::vec2 position, glm::vec2 velocity, ofFloatColor color, float spin, float drawRadius = -1.0f);
 
+  // Immediately kill a random `fraction` (0..1) of currently-live particles.
+  // Marked-dead particles stop drawing from the next frame; on a persistent +
+  // faded layer this leaves a fading trace of the killed particles while the
+  // survivors carry on. No-op if fraction <= 0 or no live particles. Call before
+  // update() so the kills propagate through that frame's transform feedback.
+  void cull(float fraction);
+
   size_t size() const { return liveCount; }
 
   std::string getParameterGroupName() const { return "Particle Set"; }
